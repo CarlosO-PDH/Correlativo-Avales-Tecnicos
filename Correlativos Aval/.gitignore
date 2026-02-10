@@ -1,0 +1,19 @@
+# Dependencies
+backend/node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Database runtime files
+database/avales.db
+database/*.db-shm
+database/*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS/editor
+.DS_Store
+Thumbs.db
