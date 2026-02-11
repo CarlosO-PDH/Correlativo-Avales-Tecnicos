@@ -1,0 +1,137 @@
+<main class="page">
+  <section class="hero">
+    <p class="eyebrow">Direccion de Tecnologias de la Informacion</p>
+    <h1>Control de Avales Tecnicos</h1>
+  </section>
+
+  <section class="layout">
+    <article class="card">
+      <header class="card-header">
+        <h2>{{ isEditing ? 'Editar Aval' : 'Nuevo Aval' }}</h2>
+        <p *ngIf="isEditing">El correlativo se conserva y no puede modificarse.</p>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="submitForm()" class="form-grid">
+        <label>
+          Fecha de registro
+          <input type="date" formControlName="fecha_registro" />
+        </label>
+
+        <label>
+          Direccion Administrativa
+          <input type="text" formControlName="direccion_administrativa" />
+        </label>
+
+        <label>
+          Unidad de la Institucion
+          <input type="text" formControlName="unidad_institucion" />
+        </label>
+
+        <label>
+          Nombre del Solicitante
+          <input type="text" formControlName="nombre_solicitante" />
+        </label>
+
+        <label>
+          Cargo
+          <input type="text" formControlName="cargo" />
+        </label>
+
+        <label class="full-width">
+          Memorando de Solicitud
+          <input type="text" formControlName="memorando_solicitud" />
+        </label>
+
+        <div class="actions full-width">
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Aval' }}
+          </button>
+          <button type="button" class="ghost" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
+        </div>
+      </form>
+
+      <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
+      <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    </article>
+
+    <article class="card table-card">
+      <header class="card-header">
+        <h2>Avales Registrados</h2>
+        <p>{{ avales().length }} registro(s)</p>
+      </header>
+
+      <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <label>
+          Correlativo
+          <input type="text" formControlName="correlativo" placeholder="DTI|DSST|AVAL|0001" />
+        </label>
+        <label>
+          Solicitante
+          <input type="text" formControlName="solicitante" placeholder="Nombre del solicitante" />
+        </label>
+        <label>
+          Fecha
+          <input type="date" formControlName="fecha" />
+        </label>
+        <label>
+          Estado
+          <select formControlName="estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="ANULADO">ANULADO</option>
+          </select>
+        </label>
+        <div class="actions full-width">
+          <button type="submit">Buscar</button>
+          <button type="button" class="ghost" (click)="clearFilters()">Limpiar</button>
+          <button type="button" class="ghost" (click)="printHistorial()">Imprimir Historial</button>
+        </div>
+      </form>
+
+      <div class="table-wrap" *ngIf="!loading(); else loadingTpl">
+        <table>
+          <thead>
+            <tr>
+              <th>Correlativo</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Solicitante</th>
+              <th>Cargo</th>
+              <th>Memorando</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let aval of avales(); trackBy: trackById">
+              <td class="mono">{{ aval.correlativo }}</td>
+              <td>{{ aval.fecha_registro }}</td>
+              <td>
+                <span class="status" [class.status-off]="aval.estado === 'ANULADO'">{{ aval.estado }}</span>
+              </td>
+              <td>{{ aval.nombre_solicitante }}</td>
+              <td>{{ aval.cargo }}</td>
+              <td>
+                <div>{{ aval.memorando_solicitud }}</div>
+                <small *ngIf="aval.estado === 'ANULADO'">Motivo: {{ aval.motivo_anulacion }}</small>
+              </td>
+              <td class="row-actions">
+                <button class="mini" type="button" [disabled]="aval.estado === 'ANULADO'" (click)="startEdit(aval)">
+                  Editar
+                </button>
+                <button class="mini ghost" type="button" [disabled]="aval.estado === 'ANULADO'" (click)="anularAval(aval)">
+                  Anular
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="empty" *ngIf="avales().length === 0">Aun no hay avales registrados.</p>
+      </div>
+
+      <ng-template #loadingTpl>
+        <p class="loading">Cargando avales...</p>
+      </ng-template>
+    </article>
+  </section>
+</main>

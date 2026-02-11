@@ -2,6 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "src/index.js",
+  "volta": {
+    "node": "22.11.0",
+    "npm": "11.6.2"
+  },
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
@@ -13,6 +17,7 @@
   "dependencies": {
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
+    "debug": "^4.4.3",
     "express": "^5.2.1"
   },
   "devDependencies": {
