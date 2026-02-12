@@ -22,6 +22,14 @@ function hasColumn(tableName, columnName) {
 // FUNCIÓN: Ejecutar migraciones de base de datos
 // Las migraciones agregan nuevas columnas si no existen (evolución segura del esquema)
 function runMigrations() {
+  if (!hasColumn("avales", "fecha_solicitud")) {
+    db.exec("ALTER TABLE avales ADD COLUMN fecha_solicitud TEXT");
+  }
+
+  if (!hasColumn("avales", "responsable")) {
+    db.exec("ALTER TABLE avales ADD COLUMN responsable TEXT");
+  }
+
   // Migración 1: Agregar columna 'estado' si no existe
   // Estado puede ser 'ACTIVO' o 'ANULADO'
   if (!hasColumn("avales", "estado")) {

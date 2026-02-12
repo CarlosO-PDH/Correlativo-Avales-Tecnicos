@@ -4,6 +4,8 @@ export interface Aval {
   id: number;
   // Fecha en que se registró el aval
   fecha_registro: string;
+  // Fecha de solicitud (fecha en que ingresa el documento de solicitud)
+  fecha_solicitud: string | null;
   // Código único del aval: DTI|DSST|AVAL|0001
   correlativo: string;
   // Dirección o departamento administrativo
@@ -14,6 +16,8 @@ export interface Aval {
   nombre_solicitante: string;
   // Puesto o cargo del solicitante
   cargo: string;
+  // Responsable asignado internamente
+  responsable: string | null;
   // Referencia del memorando de solicitud
   memorando_solicitud: string;
   // Estado del aval: ACTIVO o ANULADO
@@ -32,10 +36,12 @@ export interface Aval {
 // Solo incluye los campos que el usuario debe ingresar
 export interface AvalPayload {
   fecha_registro: string;           // Fecha de registro (YYYY-MM-DD)
+  fecha_solicitud: string;          // Fecha solicitud (YYYY-MM-DD)
   direccion_administrativa: string; // Dirección administrativa
   unidad_institucion: string;       // Unidad
   nombre_solicitante: string;       // Nombre de quien solicita
   cargo: string;                    // Cargo del solicitante
+  responsable: string;              // Responsable (seleccionado de lista)
   memorando_solicitud: string;      // Número o referencia de memorando
 }
 

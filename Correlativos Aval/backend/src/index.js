@@ -30,19 +30,23 @@ initDatabase();
 // Campos que DEBEN estar presentes al crear un nuevo aval
 const requiredCreateFields = [
   "fecha_registro",             // Fecha del registro del aval
+  "fecha_solicitud",            // Fecha en que ingresa la solicitud
   "direccion_administrativa",   // Dirección/departamento
   "unidad_institucion",          // Unidad dentro de la institución
   "nombre_solicitante",          // Nombre de quien solicita
   "cargo",                       // Cargo del solicitante
+  "responsable",                // Responsable (lista interna)
   "memorando_solicitud",         // Referencia del memorando
 ];
 
 const editableFields = [
   "fecha_registro",
+  "fecha_solicitud",
   "direccion_administrativa",
   "unidad_institucion",
   "nombre_solicitante",
   "cargo",
+  "responsable",
   "memorando_solicitud",
 ];
 
@@ -86,21 +90,25 @@ const createAvalTx = db.transaction((payload) => {
     .prepare(
       `INSERT INTO avales (
         fecha_registro,
+        fecha_solicitud,
         correlativo,
         direccion_administrativa,
         unidad_institucion,
         nombre_solicitante,
         cargo,
+        responsable,
         memorando_solicitud
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       payload.fecha_registro,
+      payload.fecha_solicitud,
       correlativo,
       payload.direccion_administrativa,
       payload.unidad_institucion,
       payload.nombre_solicitante,
       payload.cargo,
+      payload.responsable,
       payload.memorando_solicitud
     );
 

@@ -50,6 +50,8 @@ Tables:
 - `unidad_institucion` TEXT NOT NULL
 - `nombre_solicitante` TEXT NOT NULL
 - `cargo` TEXT NOT NULL
+- `fecha_solicitud` TEXT NULL (format: `YYYY-MM-DD`)
+- `responsable` TEXT NULL
 - `memorando_solicitud` TEXT NOT NULL
 - `estado` TEXT NOT NULL DEFAULT `ACTIVO` (values: `ACTIVO` | `ANULADO`)
 - `motivo_anulacion` TEXT NULL
@@ -65,6 +67,43 @@ Tables:
 Migrations:
 
 - Implemented in `Correlativos Aval/backend/src/db.js` by checking columns with `PRAGMA table_info` and adding missing columns.
+
+## Data Import (From Office Spreadsheet)
+
+When you need to wipe and re-seed the database from an exported spreadsheet (CSV/TSV):
+
+- Script: `Correlativos Aval/backend/scripts/reset-and-import-avales.js`
+- NPM entry: `npm run import:avales <file>` (run inside `Correlativos Aval/backend`)
+
+What it does:
+
+- Ensures schema/migrations are applied
+- Deletes all rows from `avales`
+- Resets `avales` autoincrement
+- Imports rows from the file
+- Sets `secuencias.ultimo_numero` to the highest correlativo imported
+
+Column mapping (spreadsheet -> DB):
+
+- `Fecha` -> `fecha_registro`
+- `Fecha de Solicitud` -> `fecha_solicitud`
+- `Dirección` -> `direccion_administrativa`
+- `Unidad Administrativa` -> `unidad_institucion`
+- `Solicitante` -> `nombre_solicitante`
+- `Cargo` -> `cargo`
+- `Responsable` -> `responsable`
+- `Memorando de Solicitud` -> `memorando_solicitud`
+- `Correlativo Aval` -> `correlativo`
+
+Notes:
+
+- Locale exports often use semicolon `;` as delimiter; the script auto-detects it.
+- Some exports include title rows and placeholder empty rows; the script skips those.
+
+Recommended safety:
+
+- Stop the Windows service before import (avoid file locks).
+- Backup `Correlativos Aval/database/avales.db` before import.
 
 ## Backend API (Express)
 
@@ -133,6 +172,63 @@ On the server PC:
 3) `npm ci` in `frontend/`
 4) `npm run build` in `frontend/`
 5) restart backend service
+
+## Update Flows (How changes become visible)
+
+The deployed UI at `http://<SERVER_IP>:3000/` is the Angular production build served from:
+
+- `Correlativos Aval/frontend/dist/correlativos-aval-web/browser`
+
+So:
+
+- `git pull` only updates source code.
+- You must run `npm run build` (frontend) to regenerate `dist/`.
+- Restart the backend service to pick up backend changes and/or start serving the newest `dist/`.
+
+### Flow A: You committed and pushed on the SERVER PC
+
+No `git pull` is needed because your working copy already has the new code.
+
+1) If backend code changed:
+
+- `cd "Correlativos Aval/backend"`
+- `npm ci` (only if dependencies changed)
+- `Restart-Service Correlativos-Avales`
+
+2) If frontend code changed:
+
+- `cd "Correlativos Aval/frontend"`
+- `npm ci` (only if dependencies changed)
+- `npm run build`
+- `Restart-Service Correlativos-Avales`
+
+Fast-path (recommended):
+
+- Run `ops/windows/update-server.ps1` but skip `git pull` mentally (it will still work even if already up to date).
+
+### Flow B: You pushed from a DEV PC, then update the SERVER PC
+
+1) On server, fetch latest code:
+
+- `cd <repo root>`
+- `git pull`
+
+2) Reinstall deps as needed:
+
+- `npm ci` in backend (if `backend/package-lock.json` changed)
+- `npm ci` in frontend (if `frontend/package-lock.json` changed)
+
+3) Rebuild frontend (if frontend source changed):
+
+- `npm run build` in `Correlativos Aval/frontend`
+
+4) Restart the service:
+
+- `Restart-Service Correlativos-Avales`
+
+Fast-path (recommended):
+
+- Run: `ops/windows/update-server.ps1 -ServiceName "Correlativos-Avales"`
 
 ## Windows Service (Recommended)
 

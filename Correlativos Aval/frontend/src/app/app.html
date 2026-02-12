@@ -18,12 +18,17 @@
         </label>
 
         <label>
-          Direccion Administrativa
+          Fecha de solicitud
+          <input type="date" formControlName="fecha_solicitud" />
+        </label>
+
+        <label>
+          Direccion
           <input type="text" formControlName="direccion_administrativa" />
         </label>
 
         <label>
-          Unidad de la Institucion
+          Unidad Administrativa
           <input type="text" formControlName="unidad_institucion" />
         </label>
 
@@ -35,6 +40,14 @@
         <label>
           Cargo
           <input type="text" formControlName="cargo" />
+        </label>
+
+        <label>
+          Responsable
+          <select formControlName="responsable">
+            <option value="" disabled>Selecciona un responsable</option>
+            <option *ngFor="let r of responsables" [value]="r">{{ r }}</option>
+          </select>
         </label>
 
         <label class="full-width">
@@ -94,6 +107,8 @@
             <tr>
               <th>Correlativo</th>
               <th>Fecha</th>
+              <th>Fecha Solicitud</th>
+              <th>Responsable</th>
               <th>Estado</th>
               <th>Solicitante</th>
               <th>Cargo</th>
@@ -105,6 +120,8 @@
             <tr *ngFor="let aval of avales(); trackBy: trackById">
               <td class="mono">{{ aval.correlativo }}</td>
               <td>{{ aval.fecha_registro }}</td>
+              <td>{{ aval.fecha_solicitud ?? '-' }}</td>
+              <td>{{ aval.responsable ?? '-' }}</td>
               <td>
                 <span class="status" [class.status-off]="aval.estado === 'ANULADO'">{{ aval.estado }}</span>
               </td>

@@ -27,13 +27,25 @@ export class App {
   protected readonly avales = signal<Aval[]>([]);      // Lista de avales obtenidos
   protected readonly activeFilters = signal<AvalFilters>({}); // Filtros activos actuales;
 
+  // Lista fija de responsables (uso interno oficina).
+  // Si cambian con frecuencia, mover a backend/DB.
+  protected readonly responsables = [
+    'Ana Patricia García Reyes',
+    'Carlos Enrique Orozco Menéndez',
+    'Christian Randolfo Valdez Policarpio',
+    'Estuardo Adolfo Huertas Sajché',
+    'Wilfredo Orlando de León Guachín'
+  ];
+
   // ===== FORMULARIO PRINCIPAL: Para crear/editar avales =====
   protected readonly form = this.fb.group({
     fecha_registro: ['', Validators.required],              // Requerido
+    fecha_solicitud: ['', Validators.required],             // Requerido
     direccion_administrativa: ['', Validators.required],    // Requerido
     unidad_institucion: ['', Validators.required],          // Requerido
     nombre_solicitante: ['', Validators.required],          // Requerido
     cargo: ['', Validators.required],                       // Requerido
+    responsable: ['', Validators.required],                 // Requerido
     memorando_solicitud: ['', Validators.required]          // Requerido
   });
 
@@ -124,10 +136,12 @@ export class App {
     // Llenar el formulario con los datos actual del aval
     this.form.patchValue({
       fecha_registro: aval.fecha_registro,
+      fecha_solicitud: aval.fecha_solicitud ?? '',
       direccion_administrativa: aval.direccion_administrativa,
       unidad_institucion: aval.unidad_institucion,
       nombre_solicitante: aval.nombre_solicitante,
       cargo: aval.cargo,
+      responsable: aval.responsable ?? '',
       memorando_solicitud: aval.memorando_solicitud
     });
   }
@@ -250,10 +264,12 @@ export class App {
   private resetForm() {
     this.form.reset({
       fecha_registro: '',
+      fecha_solicitud: '',
       direccion_administrativa: '',
       unidad_institucion: '',
       nombre_solicitante: '',
       cargo: '',
+      responsable: '',
       memorando_solicitud: ''
     });
     this.editingId.set(null);    // Dejar de editar
