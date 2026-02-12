@@ -1,6 +1,7 @@
 // Importar dependencias necesarias para la API REST
 const express = require("express");
 const cors = require("cors"); // Permite solicitudes desde diferentes dominios
+const path = require("node:path");
 const { db, initDatabase } = require("./db"); // Sistema de base de datos SQLite
 
 // Crear instancia del servidor Express
@@ -14,6 +15,14 @@ const HOST = process.env.HOST || "0.0.0.0";
 app.use(cors());
 // Middleware: parsear JSON en las solicitudes
 app.use(express.json());
+
+// Serve Angular production build (single-server deployment).
+// Build output: ../frontend/dist/<project>/browser
+const frontendDistPath = path.resolve(
+  __dirname,
+  "../../frontend/dist/correlativos-aval-web/browser"
+);
+app.use(express.static(frontendDistPath));
 
 // Inicializar base de datos (crear tablas si no existen)
 initDatabase();
@@ -322,6 +331,13 @@ app.patch("/api/avales/:id/anular", (req, res) => {
 });
 
 // INICIAR EL SERVIDOR: Escuchar en el puerto y host configurados
+// SPA fallback (must be after API routes and static middleware).
+// Express v5 does not accept "*" as a path pattern; use a regex.
+// Exclude API routes so `/api/...` keeps returning JSON.
+app.get(/^(?!\/api(\/|$)).*/, (_req, res) => {
+  res.sendFile(path.join(frontendDistPath, "index.html"));
+});
+
 app.listen(PORT, HOST, () => {
   const address = HOST === "0.0.0.0" ? "localhost" : HOST;
   console.log(`Backend listo en http://${address}:${PORT}`);
