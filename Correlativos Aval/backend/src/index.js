@@ -132,6 +132,15 @@ app.get("/api/avales", (req, res) => {
   const fecha = cleanQueryParam(req.query.fecha);              // Filtro: fecha del registro
   const estado = cleanQueryParam(req.query.estado);            // Filtro: estado (ACTIVO/ANULADO)
 
+  // Paginación opcional
+  const rawLimit = cleanQueryParam(req.query.limit);
+  const rawOffset = cleanQueryParam(req.query.offset);
+  const limit = rawLimit ? Number.parseInt(rawLimit, 10) : null;
+  const offset = rawOffset ? Number.parseInt(rawOffset, 10) : null;
+  const usePaging = Number.isInteger(limit) && limit > 0;
+  const safeLimit = usePaging ? Math.min(limit, 200) : null;
+  const safeOffset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
+
   // Construir dinámicamente la consulta SQL según los filtros proporcionados
   const where = []; // Condiciones WHERE
   const values = []; // Valores para los parámetros preparados
@@ -160,10 +169,20 @@ app.get("/api/avales", (req, res) => {
     values.push(estado.toUpperCase());
   }
 
+  const whereSql = where.length > 0 ? ` WHERE ${where.join(" AND ")}` : "";
+  const baseSql = `FROM avales${whereSql}`;
+
+  // Total (para UI/paginación). Se expone como header.
+  const total = db.prepare(`SELECT COUNT(*) as total ${baseSql}`).get(...values)?.total ?? 0;
+  res.setHeader("X-Total-Count", String(total));
+
   // Construir la consulta SQL completa
-  const sql = `SELECT * FROM avales${where.length > 0 ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
+  const sql = `SELECT * ${baseSql} ORDER BY id DESC${usePaging ? " LIMIT ? OFFSET ?" : ""}`;
   // Ejecutar la consulta con los parámetros preparados
-  const rows = db.prepare(sql).all(...values);
+  const rows = usePaging
+    ? db.prepare(sql).all(...values, safeLimit, safeOffset)
+    : db.prepare(sql).all(...values);
+
   // Retornar los resultados como JSON
   res.json(rows);
 });

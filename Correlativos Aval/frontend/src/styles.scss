@@ -1,0 +1,35 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Simple Material theme matching the existing blue direction.
+$primary: mat.m2-define-palette(mat.$m2-blue-palette, 800, 700, 900);
+$accent: mat.m2-define-palette(mat.$m2-cyan-palette, 700);
+$warn: mat.m2-define-palette(mat.$m2-red-palette);
+
+$theme: mat.m2-define-light-theme((
+  color: (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+  ),
+  typography: mat.m2-define-typography-config(),
+  density: 0,
+));
+
+@include mat.all-component-themes($theme);
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top right, #d8edf7 0%, #f3f7f9 45%, #e8f1f5 100%);
+  color: #0f2431;
+}

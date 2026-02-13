@@ -1,0 +1,111 @@
+<article class="card table-card">
+  <header class="card-header">
+    <div>
+      <h2>Historial</h2>
+      <p>{{ rangeLabel }} (pagina {{ pageIndex() + 1 }})</p>
+    </div>
+
+    <div class="pager-top">
+      <label class="pager-size">
+        Ver
+        <select [value]="pageSize()" (change)="changePageSize(($any($event.target)).value)">
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+        </select>
+      </label>
+      <div class="pager-buttons">
+        <button class="mini ghost" type="button" [disabled]="!canPrev || loading()" (click)="prevPage()">Anterior</button>
+        <button class="mini" type="button" [disabled]="!canNext || loading()" (click)="nextPage()">Siguiente</button>
+      </div>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <label>
+      Correlativo
+      <input type="text" formControlName="correlativo" placeholder="DTI|DSST|AVAL|0001" />
+    </label>
+    <label>
+      Solicitante
+      <input type="text" formControlName="solicitante" placeholder="Nombre del solicitante" />
+    </label>
+    <label>
+      Fecha registro
+      <input type="date" formControlName="fecha" />
+    </label>
+    <label>
+      Estado
+      <select formControlName="estado">
+        <option value="">Todos</option>
+        <option value="ACTIVO">ACTIVO</option>
+        <option value="ANULADO">ANULADO</option>
+      </select>
+    </label>
+    <div class="actions full-width">
+      <button type="submit" [disabled]="loading()">Buscar</button>
+      <button type="button" class="ghost" [disabled]="loading()" (click)="clearFilters()">Limpiar</button>
+      <button type="button" class="ghost" (click)="printHistorial()">Imprimir Historial</button>
+    </div>
+  </form>
+
+  <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <div class="table-wrap" *ngIf="!loading(); else loadingTpl">
+    <table>
+      <thead>
+        <tr>
+          <th>Correlativo</th>
+          <th>Fecha</th>
+          <th>Fecha Solicitud</th>
+          <th>Responsable</th>
+          <th>Estado</th>
+          <th>Solicitante</th>
+          <th>Cargo</th>
+          <th>Memorando</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let aval of avales(); trackBy: trackById">
+          <td class="mono">{{ aval.correlativo }}</td>
+          <td>{{ aval.fecha_registro }}</td>
+          <td>{{ aval.fecha_solicitud ?? '-' }}</td>
+          <td>{{ aval.responsable ?? '-' }}</td>
+          <td>
+            <span class="status" [class.status-off]="aval.estado === 'ANULADO'">{{ aval.estado }}</span>
+          </td>
+          <td>{{ aval.nombre_solicitante }}</td>
+          <td>{{ aval.cargo }}</td>
+          <td>
+            <div>{{ aval.memorando_solicitud }}</div>
+            <small *ngIf="aval.estado === 'ANULADO'">Motivo: {{ aval.motivo_anulacion }}</small>
+          </td>
+          <td class="row-actions">
+            <button class="mini" type="button" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="startEdit(aval)">
+              Editar
+            </button>
+            <button class="mini ghost" type="button" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="anularAval(aval)">
+              Anular
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="empty" *ngIf="avales().length === 0">Aun no hay avales registrados.</p>
+  </div>
+
+  <ng-template #loadingTpl>
+    <p class="loading">Cargando avales...</p>
+  </ng-template>
+
+  <footer class="pager-bottom">
+    <span>{{ rangeLabel }}</span>
+    <div class="pager-buttons">
+      <button class="mini ghost" type="button" [disabled]="!canPrev || loading()" (click)="prevPage()">Anterior</button>
+      <button class="mini" type="button" [disabled]="!canNext || loading()" (click)="nextPage()">Siguiente</button>
+    </div>
+  </footer>
+</article>

@@ -1,6 +1,7 @@
 // Importar los módulos necesarios
 import { Injectable, inject } from '@angular/core'; // Inyección de dependencias de Angular
 import { HttpClient, HttpParams } from '@angular/common/http'; // Cliente HTTP para llamadas al backend
+import { map } from 'rxjs';
 import { Aval, AvalFilters, AvalPayload } from './aval.model'; // Tipos/modelos de datos
 
 // Servicio inyectable disponible globalmente en la aplicación
@@ -12,33 +13,53 @@ export class AvalesService {
   // Use relative URL so it works when hosted centrally (same origin).
   private readonly baseUrl = '/api/avales';
 
-  // Método: Obtener lista de avales con filtros opcionales
-  getAll(filters?: AvalFilters) {
-    // Crear objeto de parámetros HTTP
+  private buildParams(filters?: AvalFilters) {
     let params = new HttpParams();
 
-    // Si hay filtro de correlativo, agregarlo a los parámetros
     if (filters?.correlativo?.trim()) {
       params = params.set('correlativo', filters.correlativo.trim());
     }
 
-    // Si hay filtro de solicitante, agregarlo
     if (filters?.solicitante?.trim()) {
       params = params.set('solicitante', filters.solicitante.trim());
     }
 
-    // Si hay filtro de fecha, agregarlo
     if (filters?.fecha?.trim()) {
       params = params.set('fecha', filters.fecha.trim());
     }
 
-    // Si hay filtro de estado, agregarlo
     if (filters?.estado?.trim()) {
       params = params.set('estado', filters.estado.trim());
     }
 
-    // Hacer petición GET y retornar un Observable de lista de Avales
+    return params;
+  }
+
+  // Método: Obtener lista de avales (sin paginación)
+  getAll(filters?: AvalFilters) {
+    const params = this.buildParams(filters);
     return this.http.get<Aval[]>(this.baseUrl, { params });
+  }
+
+  // Método: Obtener una página con total (paginación server-side)
+  getPage(filters: AvalFilters | undefined, paging: { limit: number; offset: number }) {
+    let params = this.buildParams(filters);
+    params = params.set('limit', String(paging.limit));
+    params = params.set('offset', String(paging.offset));
+
+    return this.http
+      .get<Aval[]>(this.baseUrl, { params, observe: 'response' })
+      .pipe(
+        map((resp) => {
+          const total = Number(resp.headers.get('X-Total-Count') ?? 0);
+          return { items: resp.body ?? [], total: Number.isFinite(total) ? total : 0 };
+        })
+      );
+  }
+
+  // Método: Obtener un aval por ID
+  getById(id: number) {
+    return this.http.get<Aval>(`${this.baseUrl}/${id}`);
   }
 
   // Método: Crear un nuevo aval

@@ -1,0 +1,61 @@
+<article class="card">
+  <header class="card-header">
+    <h2>{{ isEditing ? 'Editar Aval' : 'Nuevo Aval' }}</h2>
+    <p *ngIf="isEditing">El correlativo se conserva y no puede modificarse.</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submitForm()" class="form-grid">
+    <label>
+      Fecha de registro
+      <input type="date" formControlName="fecha_registro" />
+    </label>
+
+    <label>
+      Fecha de solicitud
+      <input type="date" formControlName="fecha_solicitud" />
+    </label>
+
+    <label>
+      Direccion
+      <input type="text" formControlName="direccion_administrativa" />
+    </label>
+
+    <label>
+      Unidad Administrativa
+      <input type="text" formControlName="unidad_institucion" />
+    </label>
+
+    <label>
+      Nombre del Solicitante
+      <input type="text" formControlName="nombre_solicitante" />
+    </label>
+
+    <label>
+      Cargo
+      <input type="text" formControlName="cargo" />
+    </label>
+
+    <label>
+      Responsable
+      <select formControlName="responsable">
+        <option value="" disabled>Selecciona un responsable</option>
+        <option *ngFor="let r of responsables" [value]="r">{{ r }}</option>
+      </select>
+    </label>
+
+    <label class="full-width">
+      Memorando de Solicitud
+      <input type="text" formControlName="memorando_solicitud" />
+    </label>
+
+    <div class="actions full-width">
+      <button type="submit" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Aval' }}
+      </button>
+      <button type="button" class="ghost" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
+    </div>
+  </form>
+
+  <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+</article>
