@@ -11,6 +11,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-historial',
@@ -21,12 +27,90 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatIconModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './historial.component.html',
-  styleUrl: './historial.component.css'
+  styleUrl: './historial.component.css',
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-GT' },
+    {
+      provide: MAT_DATE_FORMATS,
+      useValue: {
+        parse: {
+          dateInput: 'DD/MM/YYYY',
+        },
+        display: {
+          dateInput: 'dd/MM/yyyy',
+          monthYearLabel: 'MMM yyyy',
+          dateA11yLabel: 'LL',
+          monthYearA11yLabel: 'MMMM yyyy',
+        },
+      },
+    },
+  ]
 })
 export class HistorialComponent {
+      // Formato de fecha para Guatemala (dd/MM/yyyy)
+      protected formatDateInput = (event: any) => {
+        if (!event.value) return '';
+        const date = event.value instanceof Date ? event.value : new Date(event.value);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+    // Exportar a Excel (.xls)
+    protected exportExcel() {
+      const rows = this.avales();
+      if (!rows.length) {
+        alert('No hay registros para exportar.');
+        return;
+      }
+      // Mapeo explícito de columnas a propiedades de Aval
+      const columns = [
+        { key: 'correlativo', label: 'Correlativo' },
+        { key: 'fecha_registro', label: 'Fecha Registro' },
+        { key: 'fecha_solicitud', label: 'Fecha Solicitud' },
+        { key: 'responsable', label: 'Responsable' },
+        { key: 'estado', label: 'Estado' },
+        { key: 'nombre_solicitante', label: 'Solicitante' },
+        { key: 'cargo', label: 'Cargo' },
+        { key: 'memorando_solicitud', label: 'Memorando' },
+        { key: 'motivo_anulacion', label: 'Motivo Anulación' }
+      ];
+      let table = '<table><thead><tr>';
+      for (const col of columns) {
+        table += `<th>${col.label}</th>`;
+      }
+      table += '</tr></thead><tbody>';
+      for (const row of rows) {
+        table += '<tr>';
+        for (const col of columns) {
+          // @ts-ignore
+          table += `<td>${row[col.key] ?? ''}</td>`;
+        }
+        table += '</tr>';
+      }
+      table += '</tbody></table>';
+      const blob = new Blob([
+        '<html><head><meta charset="utf-8"></head><body>',
+        table,
+        '</body></html>'
+      ], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'historial_avales.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   private readonly fb = inject(FormBuilder);
   private readonly avalesService = inject(AvalesService);
   private readonly router = inject(Router);
@@ -38,6 +122,23 @@ export class HistorialComponent {
 
   protected readonly avales = signal<Aval[]>([]);
   protected readonly total = signal(0);
+  protected readonly displayedColumns = [
+    'correlativo',
+    'fecha_registro',
+    'fecha_solicitud',
+    'responsable',
+    'estado',
+    'nombre_solicitante',
+    'cargo',
+    'memorando_solicitud',
+    'actions'
+  ];
+  // Manejo de paginación Material
+  protected onPage(event: any) {
+    this.pageSize.set(event.pageSize);
+    this.pageIndex.set(event.pageIndex);
+    this.loadPage();
+  }
 
   protected readonly pageSize = signal<10 | 25 | 50>(25);
   protected readonly pageIndex = signal(0); // 0-based
@@ -66,7 +167,7 @@ export class HistorialComponent {
     this.filterForm.reset({
       correlativo: '',
       solicitante: '',
-      fecha: '',
+      fecha: null,
       estado: ''
     });
     this.pageIndex.set(0);

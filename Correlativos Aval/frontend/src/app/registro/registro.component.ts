@@ -11,6 +11,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 
 @Component({
   selector: 'app-registro',
@@ -21,12 +25,41 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatButtonModule
+    MatButtonModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatIconModule
   ],
   templateUrl: './registro.component.html',
-  styleUrl: './registro.component.css'
+  styleUrl: './registro.component.css',
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-GT' },
+    {
+      provide: MAT_DATE_FORMATS,
+      useValue: {
+        parse: {
+          dateInput: 'DD/MM/YYYY',
+        },
+        display: {
+          dateInput: 'dd/MM/yyyy',
+          monthYearLabel: 'MMM yyyy',
+          dateA11yLabel: 'LL',
+          monthYearA11yLabel: 'MMMM yyyy',
+        },
+      },
+    },
+  ]
 })
 export class RegistroComponent {
+    // Formato de fecha para Guatemala (dd/MM/yyyy)
+    protected formatDateInput = (event: any) => {
+      if (!event.value) return '';
+      const date = event.value instanceof Date ? event.value : new Date(event.value);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
   private readonly fb = inject(FormBuilder);
   private readonly avalesService = inject(AvalesService);
   private readonly route = inject(ActivatedRoute);

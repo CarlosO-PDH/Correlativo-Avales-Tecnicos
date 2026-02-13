@@ -1,61 +1,76 @@
-<article class="card">
-  <header class="card-header">
-    <h2>{{ isEditing ? 'Editar Aval' : 'Nuevo Aval' }}</h2>
-    <p *ngIf="isEditing">El correlativo se conserva y no puede modificarse.</p>
-  </header>
+<mat-card class="registro-card">
+  <mat-card-header>
+    <mat-card-title>
+      <span class="mat-headline">{{ isEditing ? 'Editar Aval' : 'Registro de Aval' }}</span>
+    </mat-card-title>
+    <mat-card-subtitle *ngIf="isEditing">El correlativo se conserva y no puede modificarse.</mat-card-subtitle>
+  </mat-card-header>
 
-  <form [formGroup]="form" (ngSubmit)="submitForm()" class="form-grid">
-    <label>
-      Fecha de registro
-      <input type="date" formControlName="fecha_registro" />
-    </label>
+  <form [formGroup]="form" (ngSubmit)="submitForm()" class="registro-form">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Fecha de registro</mat-label>
+        <input matInput [matDatepicker]="picker1" formControlName="fecha_registro" required placeholder="dd/mm/aaaa">
+        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+        <mat-datepicker #picker1></mat-datepicker>
+      </mat-form-field>
 
-    <label>
-      Fecha de solicitud
-      <input type="date" formControlName="fecha_solicitud" />
-    </label>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Fecha de solicitud</mat-label>
+        <input matInput [matDatepicker]="picker2" formControlName="fecha_solicitud" required placeholder="dd/mm/aaaa">
+        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+        <mat-datepicker #picker2></mat-datepicker>
+      </mat-form-field>
+    </div>
 
-    <label>
-      Direccion
-      <input type="text" formControlName="direccion_administrativa" />
-    </label>
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Dirección</mat-label>
+        <input matInput formControlName="direccion_administrativa" required>
+      </mat-form-field>
 
-    <label>
-      Unidad Administrativa
-      <input type="text" formControlName="unidad_institucion" />
-    </label>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Unidad Administrativa</mat-label>
+        <input matInput formControlName="unidad_institucion" required>
+      </mat-form-field>
+    </div>
 
-    <label>
-      Nombre del Solicitante
-      <input type="text" formControlName="nombre_solicitante" />
-    </label>
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Nombre del Solicitante</mat-label>
+        <input matInput formControlName="nombre_solicitante" required>
+      </mat-form-field>
 
-    <label>
-      Cargo
-      <input type="text" formControlName="cargo" />
-    </label>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Cargo</mat-label>
+        <input matInput formControlName="cargo" required>
+      </mat-form-field>
+    </div>
 
-    <label>
-      Responsable
-      <select formControlName="responsable">
-        <option value="" disabled>Selecciona un responsable</option>
-        <option *ngFor="let r of responsables" [value]="r">{{ r }}</option>
-      </select>
-    </label>
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Responsable</mat-label>
+        <mat-select formControlName="responsable" required>
+          <mat-option value="" disabled>Selecciona un responsable</mat-option>
+          <mat-option *ngFor="let r of responsables" [value]="r">{{ r }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Memorando de Solicitud</mat-label>
+        <input matInput formControlName="memorando_solicitud" required>
+      </mat-form-field>
+    </div>
 
-    <label class="full-width">
-      Memorando de Solicitud
-      <input type="text" formControlName="memorando_solicitud" />
-    </label>
-
-    <div class="actions full-width">
-      <button type="submit" [disabled]="saving()">
-        {{ saving() ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Aval' }}
+    <div class="actions">
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Registrar Aval' }}
       </button>
-      <button type="button" class="ghost" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
+      <button mat-stroked-button color="basic" type="button" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
     </div>
   </form>
 
-  <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-</article>
+  <mat-card-content>
+    <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
+    <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  </mat-card-content>
+</mat-card>
