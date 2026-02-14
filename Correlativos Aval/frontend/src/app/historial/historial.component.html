@@ -8,9 +8,9 @@
       <mat-icon aria-hidden="true">print</mat-icon>
       Imprimir
     </button>
-    <button mat-flat-button color="accent" type="button" (click)="exportExcel()" [disabled]="loading()">
+    <button mat-flat-button color="accent" type="button" (click)="exportExcel()" [disabled]="loading() || exporting()">
       <mat-icon aria-hidden="true">file_download</mat-icon>
-      Exportar Excel
+      {{ exporting() ? 'Exportando...' : 'Exportar Excel' }}
     </button>
   </mat-card-content>
 </mat-card>

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { AvalesService } from '../avales.service';
 import { Aval, AvalFilters } from '../aval.model';
@@ -43,56 +44,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 })
 export class HistorialComponent {
   protected readonly formatDmy = formatDmy;
-    // Exportar a Excel (.xls)
-  protected exportExcel() {
-      const rows = this.avales();
-      if (!rows.length) {
-        alert('No hay registros para exportar.');
-        return;
-      }
-      // Mapeo explícito de columnas a propiedades de Aval
-      const columns = [
-        { key: 'correlativo', label: 'Correlativo' },
-        { key: 'fecha_registro', label: 'Fecha Registro' },
-        { key: 'fecha_solicitud', label: 'Fecha Solicitud' },
-        { key: 'responsable', label: 'Responsable' },
-        { key: 'estado', label: 'Estado' },
-        { key: 'nombre_solicitante', label: 'Solicitante' },
-        { key: 'cargo', label: 'Cargo' },
-        { key: 'memorando_solicitud', label: 'Memorando' },
-        { key: 'motivo_anulacion', label: 'Motivo Anulación' }
-      ];
-      let table = '<table><thead><tr>';
-      for (const col of columns) {
-        table += `<th>${col.label}</th>`;
-      }
-      table += '</tr></thead><tbody>';
-      for (const row of rows) {
-        table += '<tr>';
-        for (const col of columns) {
-          const cell = (row as any)[col.key];
-          const value = col.key === 'fecha_registro' || col.key === 'fecha_solicitud'
-            ? formatDmy(cell)
-            : (cell ?? '');
-          table += `<td>${value}</td>`;
-        }
-        table += '</tr>';
-      }
-      table += '</tbody></table>';
-      const blob = new Blob([
-        '<html><head><meta charset="utf-8"></head><body>',
-        table,
-        '</body></html>'
-      ], { type: 'application/vnd.ms-excel' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'historial_avales.xls';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+
+  protected readonly exporting = signal(false);
   private readonly fb = inject(FormBuilder);
   private readonly avalesService = inject(AvalesService);
   private readonly router = inject(Router);
@@ -134,6 +87,108 @@ export class HistorialComponent {
 
   constructor() {
     this.loadPage();
+  }
+
+  // Exportar a Excel (.xls)
+  // Nota: exporta TODOS los registros que cumplen los filtros actuales,
+  // no solo los visibles en la página actual.
+  protected async exportExcel() {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+
+    try {
+      const filters = this.buildFiltersFromForm();
+
+      // Cargar todo en lotes para no depender de la pagina actual.
+      const limit = 200;
+      let offset = 0;
+      let total = 0;
+      const all: Aval[] = [];
+
+      while (true) {
+        const page = await firstValueFrom(this.avalesService.getPage(filters, { limit, offset }));
+        if (offset === 0) total = page.total;
+
+        all.push(...page.items);
+        offset += page.items.length;
+
+        if (page.items.length === 0) break;
+        if (total > 0 && offset >= total) break;
+        // Fallback (si total no viene por alguna razón)
+        if (total === 0 && page.items.length < limit) break;
+      }
+
+      if (!all.length) {
+        alert('No hay registros para exportar.');
+        return;
+      }
+
+      this.downloadXls(all);
+    } catch {
+      alert('No se pudo exportar el historial.');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  private buildFiltersFromForm(): AvalFilters {
+    const raw = this.filterForm.getRawValue();
+    const fechaYmd = toYmd(raw.fecha);
+    return {
+      correlativo: raw.correlativo ?? '',
+      solicitante: raw.solicitante ?? '',
+      fecha: fechaYmd,
+      estado: (raw.estado ?? '') as AvalFilters['estado']
+    };
+  }
+
+  private downloadXls(rows: Aval[]) {
+    const columns = [
+      { key: 'correlativo', label: 'Correlativo' },
+      { key: 'fecha_registro', label: 'Fecha Registro' },
+      { key: 'fecha_solicitud', label: 'Fecha Solicitud' },
+      { key: 'responsable', label: 'Responsable' },
+      { key: 'estado', label: 'Estado' },
+      { key: 'nombre_solicitante', label: 'Solicitante' },
+      { key: 'cargo', label: 'Cargo' },
+      { key: 'memorando_solicitud', label: 'Memorando' },
+      { key: 'motivo_anulacion', label: 'Motivo Anulacion' }
+    ];
+
+    let table = '<table><thead><tr>';
+    for (const col of columns) {
+      table += `<th>${col.label}</th>`;
+    }
+    table += '</tr></thead><tbody>';
+
+    for (const row of rows) {
+      table += '<tr>';
+      for (const col of columns) {
+        const cell = (row as any)[col.key];
+        const value = col.key === 'fecha_registro' || col.key === 'fecha_solicitud'
+          ? formatDmy(cell)
+          : (cell ?? '');
+        table += `<td>${String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+      }
+      table += '</tr>';
+    }
+
+    table += '</tbody></table>';
+
+    const blob = new Blob([
+      '<html><head><meta charset="utf-8"></head><body>',
+      table,
+      '</body></html>'
+    ], { type: 'application/vnd.ms-excel' });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'historial_avales.xls';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   protected trackById(_index: number, aval: Aval) {
@@ -233,14 +288,7 @@ export class HistorialComponent {
     this.loading.set(true);
     this.clearMessages();
 
-    const raw = this.filterForm.getRawValue();
-    const fechaYmd = toYmd(raw.fecha);
-    const filters: AvalFilters = {
-      correlativo: raw.correlativo ?? '',
-      solicitante: raw.solicitante ?? '',
-      fecha: fechaYmd,
-      estado: (raw.estado ?? '') as AvalFilters['estado']
-    };
+    const filters = this.buildFiltersFromForm();
 
     const limit = this.pageSize();
     const offset = this.pageIndex() * limit;

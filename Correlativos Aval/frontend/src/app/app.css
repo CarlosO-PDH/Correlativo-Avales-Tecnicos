@@ -7,31 +7,52 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  min-height: 112px;
+  padding: 0.9rem 1rem;
 }
 
-.toolbar-title {
+.toolbar-center {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
   display: grid;
-}
-
-.toolbar-eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  opacity: 0.85;
+  justify-items: center;
+  gap: 0.35rem;
+  text-align: center;
 }
 
 .toolbar-h1 {
   font-family: 'Book Antiqua', Georgia, serif;
-  font-size: 1.05rem;
-  line-height: 1.2;
+  font-size: clamp(1.35rem, 1.6vw + 1rem, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
 }
 
-.spacer {
-  flex: 1;
+.toolbar-nav {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.toolbar-nav a {
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
+  padding: 0.55rem 1.05rem !important;
+  border-radius: 999px !important;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toolbar-nav a:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.75) !important;
 }
 
 a.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.95) !important;
 }
 
 .page {
