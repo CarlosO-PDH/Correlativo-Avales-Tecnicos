@@ -1,37 +1,26 @@
 /* Material registro diseño profesional */
 .registro-card {
-  max-width: 700px;
-  margin: 2rem auto;
-  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.08);
+  max-width: 980px;
+  margin: 1.5rem auto;
 }
 
 .registro-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem 1rem 0 1rem;
+  display: block;
 }
 
-.form-row {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+  margin-top: 0.75rem;
 }
 
-.form-field {
-  flex: 1 1 250px;
-  min-width: 200px;
-}
-
-.full-width {
-  flex: 2 1 100%;
+.span-2 {
+  grid-column: 1 / -1;
 }
 
 .actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
+  padding: 0.25rem 0.5rem;
 }
 
 .feedback {
@@ -39,10 +28,14 @@
 }
 
 @media (max-width: 700px) {
-  .form-row {
-    flex-direction: column;
-    gap: 0.75rem;
+  .grid {
+    grid-template-columns: 1fr;
   }
+
+  .span-2 {
+    grid-column: 1;
+  }
+
   .registro-card {
     margin: 1rem;
   }

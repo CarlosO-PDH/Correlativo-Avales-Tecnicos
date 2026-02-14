@@ -16,6 +16,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 @Component({
   selector: 'app-registro',
@@ -23,13 +25,15 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,
+    MatDividerModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatIconModule
+    MatIconModule,
+    TextFieldModule
   ],
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.css',
@@ -137,6 +141,20 @@ export class RegistroComponent {
 
   protected cancelEdit() {
     this.router.navigate(['/registro']);
+    this.resetForm();
+    this.clearMessages();
+  }
+
+  protected clearNewForm() {
+    if (!this.form.dirty) {
+      this.resetForm();
+      this.clearMessages();
+      return;
+    }
+
+    const ok = window.confirm('Deseas limpiar el formulario? Se perderan los cambios no guardados.');
+    if (!ok) return;
+
     this.resetForm();
     this.clearMessages();
   }

@@ -6,71 +6,77 @@
     <mat-card-subtitle *ngIf="isEditing">El correlativo se conserva y no puede modificarse.</mat-card-subtitle>
   </mat-card-header>
 
+  <mat-divider></mat-divider>
+
   <form [formGroup]="form" (ngSubmit)="submitForm()" class="registro-form">
-    <div class="form-row">
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Fecha de registro</mat-label>
-        <input matInput [matDatepicker]="picker1" formControlName="fecha_registro" required placeholder="dd/mm/aaaa">
-        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-        <mat-datepicker #picker1></mat-datepicker>
-      </mat-form-field>
+    <mat-card-content>
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de registro</mat-label>
+          <input matInput [matDatepicker]="picker1" formControlName="fecha_registro" required placeholder="dd/mm/aaaa" />
+          <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+          <mat-datepicker #picker1></mat-datepicker>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Fecha de solicitud</mat-label>
-        <input matInput [matDatepicker]="picker2" formControlName="fecha_solicitud" required placeholder="dd/mm/aaaa">
-        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
-        <mat-datepicker #picker2></mat-datepicker>
-      </mat-form-field>
-    </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de solicitud</mat-label>
+          <input matInput [matDatepicker]="picker2" formControlName="fecha_solicitud" required placeholder="dd/mm/aaaa" />
+          <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+          <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
 
-    <div class="form-row">
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Dirección</mat-label>
-        <input matInput formControlName="direccion_administrativa" required>
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="direccion_administrativa" required />
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Unidad Administrativa</mat-label>
-        <input matInput formControlName="unidad_institucion" required>
-      </mat-form-field>
-    </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Unidad Administrativa</mat-label>
+          <input matInput formControlName="unidad_institucion" required />
+        </mat-form-field>
 
-    <div class="form-row">
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Nombre del Solicitante</mat-label>
-        <input matInput formControlName="nombre_solicitante" required>
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del Solicitante</mat-label>
+          <input matInput formControlName="nombre_solicitante" required />
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Cargo</mat-label>
-        <input matInput formControlName="cargo" required>
-      </mat-form-field>
-    </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Cargo</mat-label>
+          <input matInput formControlName="cargo" required />
+        </mat-form-field>
 
-    <div class="form-row">
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Responsable</mat-label>
-        <mat-select formControlName="responsable" required>
-          <mat-option value="" disabled>Selecciona un responsable</mat-option>
-          <mat-option *ngFor="let r of responsables" [value]="r">{{ r }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="form-field full-width">
-        <mat-label>Memorando de Solicitud</mat-label>
-        <input matInput formControlName="memorando_solicitud" required>
-      </mat-form-field>
-    </div>
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Memorando de Solicitud</mat-label>
+          <textarea
+            matInput
+            cdkTextareaAutosize
+            cdkAutosizeMinRows="2"
+            cdkAutosizeMaxRows="6"
+            formControlName="memorando_solicitud"
+            required
+          ></textarea>
+        </mat-form-field>
 
-    <div class="actions">
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Responsable</mat-label>
+          <mat-select formControlName="responsable" required>
+            <mat-option *ngFor="let r of responsables" [value]="r">{{ r }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
+      <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    </mat-card-content>
+
+    <mat-divider></mat-divider>
+
+    <mat-card-actions align="end" class="actions">
       <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
         {{ saving() ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Registrar Aval' }}
       </button>
-      <button mat-stroked-button color="basic" type="button" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
-    </div>
+      <button mat-stroked-button type="button" *ngIf="isEditing" (click)="cancelEdit()">Cancelar</button>
+      <button mat-stroked-button type="button" *ngIf="!isEditing" (click)="clearNewForm()">Limpiar</button>
+    </mat-card-actions>
   </form>
-
-  <mat-card-content>
-    <p class="feedback ok" *ngIf="successMessage()">{{ successMessage() }}</p>
-    <p class="feedback err" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  </mat-card-content>
 </mat-card>
