@@ -54,6 +54,17 @@
 
 <mat-card class="table-card">
   <mat-card-content>
+    <div class="table-toolbar no-print">
+      <div class="table-toolbar-spacer"></div>
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="[10, 25, 50]"
+        (page)="onPage($event)"
+      ></mat-paginator>
+    </div>
+
     <div class="table-wrap" *ngIf="!loading(); else loadingTpl">
       <table mat-table [dataSource]="avales()" class="mat-elevation-z0">
         <ng-container matColumnDef="correlativo">
@@ -111,18 +122,9 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackById"></tr>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackById"></tr>
       </table>
-
-      <mat-paginator
-        class="no-print"
-        [length]="total()"
-        [pageSize]="pageSize()"
-        [pageIndex]="pageIndex()"
-        [pageSizeOptions]="[10, 25, 50]"
-        (page)="onPage($event)"
-      ></mat-paginator>
 
       <p class="empty" *ngIf="avales().length === 0">Aun no hay avales registrados.</p>
     </div>
