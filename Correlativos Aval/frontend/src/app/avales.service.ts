@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core'; // Inyección de dependencia
 import { HttpClient, HttpParams } from '@angular/common/http'; // Cliente HTTP para llamadas al backend
 import { map } from 'rxjs';
 import { Aval, AvalFilters, AvalPayload } from './aval.model'; // Tipos/modelos de datos
+import { toYmd } from './date-utils';
 
 // Servicio inyectable disponible globalmente en la aplicación
 @Injectable({ providedIn: 'root' })
@@ -24,8 +25,10 @@ export class AvalesService {
       params = params.set('solicitante', filters.solicitante.trim());
     }
 
-    if (filters?.fecha?.trim()) {
-      params = params.set('fecha', filters.fecha.trim());
+    const fecha = filters?.fecha as unknown;
+    const fechaYmd = toYmd(fecha);
+    if (fechaYmd) {
+      params = params.set('fecha', fechaYmd);
     }
 
     if (filters?.estado?.trim()) {

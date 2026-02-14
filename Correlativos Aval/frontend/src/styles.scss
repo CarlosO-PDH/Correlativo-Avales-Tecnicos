@@ -33,3 +33,23 @@ body {
   background: radial-gradient(circle at top right, #d8edf7 0%, #f3f7f9 45%, #e8f1f5 100%);
   color: #0f2431;
 }
+
+@media print {
+  .no-print,
+  .mat-mdc-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-unelevated-button,
+  .mat-mdc-outlined-button,
+  .mat-mdc-form-field,
+  .mat-mdc-paginator {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  mat-card {
+    box-shadow: none !important;
+  }
+}

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 
 import { AvalesService } from '../avales.service';
 import { Aval, AvalFilters } from '../aval.model';
+import { formatDmy, toYmd } from '../date-utils';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,7 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 
@@ -37,35 +38,13 @@ import { MatPaginatorModule } from '@angular/material/paginator';
   templateUrl: './historial.component.html',
   styleUrl: './historial.component.css',
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'es-GT' },
-    {
-      provide: MAT_DATE_FORMATS,
-      useValue: {
-        parse: {
-          dateInput: 'DD/MM/YYYY',
-        },
-        display: {
-          dateInput: 'dd/MM/yyyy',
-          monthYearLabel: 'MMM yyyy',
-          dateA11yLabel: 'LL',
-          monthYearA11yLabel: 'MMMM yyyy',
-        },
-      },
-    },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-GT' }
   ]
 })
 export class HistorialComponent {
-      // Formato de fecha para Guatemala (dd/MM/yyyy)
-      protected formatDateInput = (event: any) => {
-        if (!event.value) return '';
-        const date = event.value instanceof Date ? event.value : new Date(event.value);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-      };
+  protected readonly formatDmy = formatDmy;
     // Exportar a Excel (.xls)
-    protected exportExcel() {
+  protected exportExcel() {
       const rows = this.avales();
       if (!rows.length) {
         alert('No hay registros para exportar.');
@@ -91,8 +70,11 @@ export class HistorialComponent {
       for (const row of rows) {
         table += '<tr>';
         for (const col of columns) {
-          // @ts-ignore
-          table += `<td>${row[col.key] ?? ''}</td>`;
+          const cell = (row as any)[col.key];
+          const value = col.key === 'fecha_registro' || col.key === 'fecha_solicitud'
+            ? formatDmy(cell)
+            : (cell ?? '');
+          table += `<td>${value}</td>`;
         }
         table += '</tr>';
       }
@@ -146,7 +128,7 @@ export class HistorialComponent {
   protected readonly filterForm = this.fb.group({
     correlativo: [''],
     solicitante: [''],
-    fecha: [''],
+    fecha: [null as Date | null],
     estado: ['']
   });
 
@@ -252,10 +234,11 @@ export class HistorialComponent {
     this.clearMessages();
 
     const raw = this.filterForm.getRawValue();
+    const fechaYmd = toYmd(raw.fecha);
     const filters: AvalFilters = {
       correlativo: raw.correlativo ?? '',
       solicitante: raw.solicitante ?? '',
-      fecha: raw.fecha ?? '',
+      fecha: fechaYmd,
       estado: (raw.estado ?? '') as AvalFilters['estado']
     };
 
