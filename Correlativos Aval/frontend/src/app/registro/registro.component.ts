@@ -18,6 +18,8 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { TextFieldModule } from '@angular/cdk/text-field';
+import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-registro',
@@ -33,7 +35,9 @@ import { TextFieldModule } from '@angular/cdk/text-field';
     MatDatepickerModule,
     MatNativeDateModule,
     MatIconModule,
-    TextFieldModule
+    TextFieldModule,
+    MatDialogModule,
+    MatSnackBarModule
   ],
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.css',
@@ -46,6 +50,8 @@ export class RegistroComponent {
   private readonly avalesService = inject(AvalesService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal('');
@@ -128,9 +134,9 @@ export class RegistroComponent {
 
     this.avalesService.create(payload).subscribe({
       next: (created) => {
-        this.successMessage.set(`Aval creado con correlativo ${created.correlativo}.`);
-        this.resetForm();
         this.saving.set(false);
+        this.showSuccessDialog(created.correlativo);
+        this.resetForm();
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.error ?? 'No se pudo crear el aval.');
@@ -201,5 +207,88 @@ export class RegistroComponent {
   private clearMessages() {
     this.errorMessage.set('');
     this.successMessage.set('');
+  }
+
+  // CAMBIO: Ahora muestra modal profesional en lugar de mensaje simple
+  private showSuccessDialog(correlativo: string) {
+    const dialogRef = this.dialog.open(RegistroSuccessDialogComponent, {
+      width: '400px',
+      data: { correlativo },
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe();
+  }
+
+  protected copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      this.snackBar.open('Correlativo copiado al portapapeles', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+    });
+  }
+}
+
+// CAMBIO: Componente de diálogo para mostrar éxito al crear aval
+@Component({
+  selector: 'app-registro-success-dialog',
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatDialogModule],
+  template: `
+    <h2 mat-dialog-title> Aval Creado </h2>
+    <mat-dialog-content>
+      <p>El aval se ha registrado correctamente.</p>
+      <div class="correlativo-box">
+        <span class="correlativo-label">Correlativo:</span>
+        <span class="correlativo-value">{{ data.correlativo }}</span>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-flat-button color="primary" (click)="copyCorrelativo()">
+        <mat-icon>content_copy</mat-icon>
+        Copiar
+      </button>
+      <button mat-stroked-button (click)="close()">Cerrar</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    .correlativo-box {
+      background: #f5f5f5;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      text-align: center;
+    }
+    .correlativo-label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .correlativo-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1976d2;
+    }
+    mat-dialog-actions {
+      padding: 16px 0 0;
+    }
+  `]
+})
+export class RegistroSuccessDialogComponent {
+  private readonly dialogRef = inject(MatDialogRef<RegistroSuccessDialogComponent>);
+  private readonly snackBar = inject(MatSnackBar);
+  protected readonly data = inject(MAT_DIALOG_DATA);
+
+  protected copyCorrelativo() {
+    const correlativo = this.data.correlativo;
+    navigator.clipboard.writeText(correlativo).then(() => {
+      this.snackBar.open('Correlativo copiado', 'Cerrar', { duration: 2000 });
+    });
+  }
+
+  protected close() {
+    this.dialogRef.close();
   }
 }
