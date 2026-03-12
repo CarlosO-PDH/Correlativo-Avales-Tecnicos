@@ -1,0 +1,80 @@
+.dashboard-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero {
+  background: linear-gradient(125deg, #0f3d60 0%, #1d678f 48%, #3a91b5 100%);
+  color: #f3fbff;
+  border: 1px solid #2a6f91;
+}
+
+.hero-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.hero-chip {
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.hero h2 {
+  margin: 0;
+}
+
+.hero p {
+  margin: 0.45rem 0 1rem;
+  color: #d5edf8;
+}
+
+.actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.actions a[mat-flat-button] {
+  background: #f1fbff;
+  color: #0c3f5f;
+}
+
+.actions a[mat-stroked-button] {
+  color: #ecf8ff;
+  border-color: rgba(236, 248, 255, 0.6);
+}
+
+.kpis {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kpi {
+  border: 1px solid #d8e9f3;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fcff 100%);
+}
+
+.kpi span {
+  font-size: 0.82rem;
+  color: #4f6878;
+}
+
+.kpi strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.45rem;
+  color: #0f4868;
+}
+
+.kpi small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #607d8f;
+}

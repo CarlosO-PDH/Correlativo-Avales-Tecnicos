@@ -48,6 +48,29 @@ function runMigrations() {
 
   // Limpiar datos: asegurar que todos los estados sean ACTIVO
   db.exec("UPDATE avales SET estado = 'ACTIVO' WHERE estado IS NULL OR TRIM(estado) = ''");
+
+  // CAMBIO: Agregar columna responsable para trazabilidad de movimientos de inventario.
+  if (!hasColumn("inventario_movimientos", "responsable")) {
+    db.exec("ALTER TABLE inventario_movimientos ADD COLUMN responsable TEXT NOT NULL DEFAULT 'SIN_RESPONSABLE'");
+  }
+
+  // CAMBIO: Crear catalogo de responsables y poblarlo desde historial para usar lista en movimientos.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inventario_responsables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )
+  `);
+
+  db.exec(`
+    INSERT OR IGNORE INTO inventario_responsables (nombre)
+    SELECT DISTINCT TRIM(responsable)
+    FROM inventario_movimientos
+    WHERE responsable IS NOT NULL
+      AND TRIM(responsable) <> ''
+      AND TRIM(responsable) <> 'SIN_RESPONSABLE'
+  `);
 }
 
 // FUNCIÓN: Inicializar la base de datos

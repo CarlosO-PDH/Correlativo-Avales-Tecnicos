@@ -123,7 +123,8 @@
         </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackById"></tr>
+      <!-- CAMBIO: Se elimina trackBy en matRowDef por compatibilidad con la version actual de Material. -->
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
       </table>
 
       <p class="empty" *ngIf="avales().length === 0">Aun no hay avales registrados.</p>

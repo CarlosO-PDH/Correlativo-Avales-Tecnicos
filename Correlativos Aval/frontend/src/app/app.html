@@ -1,9 +1,13 @@
 <mat-toolbar color="primary" class="toolbar">
   <div class="toolbar-center">
-    <div class="toolbar-h1">Correlativos Aval Técnico</div>
+    <!-- CAMBIO: Nombre paraguas para permitir crecimiento a nuevos modulos. -->
+    <div class="toolbar-h1">Portal de Gestion</div>
     <nav class="toolbar-nav" aria-label="Navegacion">
-      <a mat-stroked-button routerLink="/registro" routerLinkActive="active">Registro</a>
-      <a mat-stroked-button routerLink="/historial" routerLinkActive="active">Historial</a>
+      <!-- CAMBIO: Se agrega acceso al dashboard principal para resumen de modulos. -->
+      <a mat-stroked-button routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a mat-stroked-button routerLink="/avales/registro" routerLinkActive="active">Avales Tecnicos</a>
+      <!-- CAMBIO: Nuevo acceso al modulo de inventario de insumos. -->
+      <a mat-stroked-button routerLink="/inventario" routerLinkActive="active">Inventario</a>
     </nav>
   </div>
 </mat-toolbar>

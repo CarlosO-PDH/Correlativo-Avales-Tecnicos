@@ -1,0 +1,16 @@
+<section class="avales-page">
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel" class="tabs-shell">
+    <a mat-tab-link routerLink="/avales/registro" routerLinkActive #registroRla="routerLinkActive" [active]="registroRla.isActive">
+      Registro
+    </a>
+    <a mat-tab-link routerLink="/avales/historial" routerLinkActive #historialRla="routerLinkActive" [active]="historialRla.isActive">
+      Historial
+    </a>
+  </nav>
+
+  <mat-tab-nav-panel #tabPanel>
+    <section class="avales-content">
+      <router-outlet></router-outlet>
+    </section>
+  </mat-tab-nav-panel>
+</section>

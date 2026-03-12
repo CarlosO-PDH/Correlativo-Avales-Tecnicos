@@ -50,6 +50,22 @@ const editableFields = [
   "memorando_solicitud",
 ];
 
+// CAMBIO: Campos de meses permitidos para registrar salidas por periodo en inventario.
+const inventarioMeses = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
 // Función auxiliar: limpiar y validar parámetros de búsqueda
 // Retorna null si el valor está vacío, de lo contrario retorna el valor limpio
 function cleanQueryParam(value) {
@@ -355,6 +371,480 @@ app.patch("/api/avales/:id/anular", (req, res) => {
   // Retornar el aval actualizado
   const updated = db.prepare("SELECT * FROM avales WHERE id = ?").get(id);
   return res.json(updated);
+});
+
+const inventarioBaseSelect = `SELECT
+  id,
+  printf('INS-%04d', id) AS correlativo,
+  numero,
+  insumo,
+  presentacion,
+  tamano_presentacion,
+  stock,
+  entrada,
+  enero,
+  febrero,
+  marzo,
+  abril,
+  mayo,
+  junio,
+  julio,
+  agosto,
+  septiembre,
+  octubre,
+  noviembre,
+  diciembre,
+  egresos,
+  total,
+  requerir_2026,
+  created_at,
+  updated_at
+FROM inventario_insumos`;
+
+function getInventarioById(id) {
+  return db.prepare(`${inventarioBaseSelect} WHERE id = ?`).get(id);
+}
+
+function validateInventarioItemPayload(payload) {
+  const insumo = typeof payload?.insumo === "string" ? payload.insumo.trim() : "";
+  const presentacion = typeof payload?.presentacion === "string" ? payload.presentacion.trim() : "";
+  const tamano =
+    typeof payload?.tamano_presentacion === "string" ? payload.tamano_presentacion.trim() : "";
+  const stock = Number(payload?.stock ?? 0);
+  const requerir = Number(payload?.requerir_2026 ?? 0);
+
+  if (!insumo || !presentacion || !tamano) {
+    return {
+      error: "Campos obligatorios incompletos",
+      fields: ["insumo", "presentacion", "tamano_presentacion"],
+    };
+  }
+
+  if (!Number.isInteger(stock) || stock < 0 || !Number.isInteger(requerir) || requerir < 0) {
+    return { error: "Stock y requerir_2026 deben ser enteros positivos" };
+  }
+
+  return {
+    value: {
+      insumo,
+      presentacion,
+      tamano,
+      stock,
+      requerir,
+    },
+  };
+}
+
+function ensureResponsable(nombre) {
+  db.prepare("INSERT OR IGNORE INTO inventario_responsables (nombre) VALUES (?)").run(nombre);
+}
+
+const registrarMovimientoTx = db.transaction(({ id, tipo, cantidad, mes, detalle, responsable }) => {
+  const item = getInventarioById(id);
+  if (!item) {
+    throw new Error("Insumo no encontrado");
+  }
+
+  if (tipo === "SALIDA" && item.total < cantidad) {
+    throw new Error("No hay stock suficiente para registrar la salida");
+  }
+
+  if (tipo === "ENTRADA") {
+    // CAMBIO: Entrada incrementa acumulado de entradas y total del insumo.
+    db.prepare(
+      "UPDATE inventario_insumos SET entrada = entrada + ?, total = total + ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(cantidad, cantidad, id);
+  } else {
+    // CAMBIO: Salida incrementa el mes, egresos y reduce total disponible.
+    db.prepare(
+      `UPDATE inventario_insumos
+       SET ${mes} = ${mes} + ?,
+           egresos = egresos + ?,
+           total = total - ?,
+           updated_at = datetime('now', 'localtime')
+       WHERE id = ?`
+    ).run(cantidad, cantidad, cantidad, id);
+  }
+
+  ensureResponsable(responsable);
+
+  // CAMBIO: Registro auditable del movimiento aplicado al inventario.
+  db.prepare(
+    `INSERT INTO inventario_movimientos (
+      inventario_id,
+      tipo,
+      responsable,
+      mes,
+      cantidad,
+      detalle
+    ) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, tipo, responsable, tipo === "SALIDA" ? mes : null, cantidad, detalle || null);
+
+  return getInventarioById(id);
+});
+
+const corregirMovimientoTx = db.transaction(({ id, tipo, cantidad, mes, detalle, responsable }) => {
+  const item = getInventarioById(id);
+  if (!item) {
+    throw new Error("Insumo no encontrado");
+  }
+
+  if (tipo === "ENTRADA") {
+    if (item.entrada < cantidad || item.total < cantidad) {
+      throw new Error("No se puede revertir esa entrada por falta de saldo");
+    }
+
+    // CAMBIO: Correccion de entrada revierte acumulado y total.
+    db.prepare(
+      "UPDATE inventario_insumos SET entrada = entrada - ?, total = total - ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(cantidad, cantidad, id);
+  } else {
+    if (item[mes] < cantidad || item.egresos < cantidad) {
+      throw new Error("No se puede revertir esa salida por falta de saldo en mes o egresos");
+    }
+
+    // CAMBIO: Correccion de salida revierte mes, egresos y repone total.
+    db.prepare(
+      `UPDATE inventario_insumos
+       SET ${mes} = ${mes} - ?,
+           egresos = egresos - ?,
+           total = total + ?,
+           updated_at = datetime('now', 'localtime')
+       WHERE id = ?`
+    ).run(cantidad, cantidad, cantidad, id);
+  }
+
+  const tipoCorreccion = tipo === "ENTRADA" ? "CORRECCION_ENTRADA" : "CORRECCION_SALIDA";
+  ensureResponsable(responsable);
+  // CAMBIO: Se registra la correccion para conservar trazabilidad del ajuste manual.
+  db.prepare(
+    `INSERT INTO inventario_movimientos (
+      inventario_id,
+      tipo,
+      responsable,
+      mes,
+      cantidad,
+      detalle
+    ) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, tipoCorreccion, responsable, tipo === "SALIDA" ? mes : null, cantidad, detalle || null);
+
+  return getInventarioById(id);
+});
+
+// ENDPOINT GET: Obtener inventario con filtro opcional por texto
+app.get("/api/inventario", (req, res) => {
+  const q = cleanQueryParam(req.query.q);
+  const where = [];
+  const values = [];
+
+  if (q) {
+    where.push("(insumo LIKE ? OR presentacion LIKE ? OR tamano_presentacion LIKE ?)");
+    values.push(`%${q}%`, `%${q}%`, `%${q}%`);
+  }
+
+  const whereSql = where.length > 0 ? ` WHERE ${where.join(" AND ")}` : "";
+  const rows = db
+    .prepare(
+      `${inventarioBaseSelect}${whereSql}
+       ORDER BY numero ASC, insumo ASC, presentacion ASC, tamano_presentacion ASC`
+    )
+    .all(...values);
+
+  return res.json(rows);
+});
+
+// ENDPOINT GET: Historial global de movimientos de inventario
+app.get("/api/inventario/movimientos", (req, res) => {
+  const tipo = cleanQueryParam(req.query.tipo);
+  const responsable = cleanQueryParam(req.query.responsable);
+  const q = cleanQueryParam(req.query.q);
+  const where = [];
+  const values = [];
+
+  if (tipo) {
+    where.push("m.tipo = ?");
+    values.push(tipo.toUpperCase());
+  }
+
+  if (responsable) {
+    where.push("m.responsable LIKE ?");
+    values.push(`%${responsable}%`);
+  }
+
+  if (q) {
+    where.push("(i.insumo LIKE ? OR i.presentacion LIKE ? OR i.tamano_presentacion LIKE ?)");
+    values.push(`%${q}%`, `%${q}%`, `%${q}%`);
+  }
+
+  const whereSql = where.length > 0 ? ` WHERE ${where.join(" AND ")}` : "";
+  const rows = db
+    .prepare(
+      `SELECT
+         m.id,
+         m.inventario_id,
+         m.tipo,
+         m.responsable,
+         m.mes,
+         m.cantidad,
+         m.detalle,
+         m.created_at,
+         i.insumo,
+         i.presentacion,
+         i.tamano_presentacion
+       FROM inventario_movimientos m
+       JOIN inventario_insumos i ON i.id = m.inventario_id${whereSql}
+       ORDER BY m.id DESC`
+    )
+    .all(...values);
+
+  return res.json(rows);
+});
+
+// ENDPOINT GET: Lista de responsables disponibles para movimientos
+app.get("/api/inventario/responsables", (_req, res) => {
+  const rows = db
+    .prepare("SELECT id, nombre FROM inventario_responsables ORDER BY nombre COLLATE NOCASE ASC")
+    .all();
+
+  return res.json(rows);
+});
+
+// ENDPOINT POST: Crear un nuevo responsable para la lista de movimientos
+app.post("/api/inventario/responsables", (req, res) => {
+  const nombre = typeof req.body?.nombre === "string" ? req.body.nombre.trim() : "";
+
+  if (!nombre) {
+    return res.status(400).json({ error: "Nombre de responsable es obligatorio" });
+  }
+
+  try {
+    const result = db.prepare("INSERT INTO inventario_responsables (nombre) VALUES (?)").run(nombre);
+    const created = db.prepare("SELECT id, nombre FROM inventario_responsables WHERE id = ?").get(result.lastInsertRowid);
+    return res.status(201).json(created);
+  } catch (error) {
+    return res.status(400).json({
+      error: "No se pudo crear el responsable",
+      detail: error.message,
+    });
+  }
+});
+
+// ENDPOINT GET: Obtener detalle de un item de inventario
+app.get("/api/inventario/:id", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const item = getInventarioById(id);
+  if (!item) {
+    return res.status(404).json({ error: "Insumo no encontrado" });
+  }
+
+  return res.json(item);
+});
+
+// ENDPOINT GET: Historial de movimientos de un item
+app.get("/api/inventario/:id/movimientos", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const item = getInventarioById(id);
+  if (!item) {
+    return res.status(404).json({ error: "Insumo no encontrado" });
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT id, inventario_id, tipo, responsable, mes, cantidad, detalle, created_at
+       FROM inventario_movimientos
+       WHERE inventario_id = ?
+       ORDER BY id DESC`
+    )
+    .all(id);
+
+  return res.json(rows);
+});
+
+// ENDPOINT POST: Crear nuevo insumo en inventario
+app.post("/api/inventario", (req, res) => {
+  const parsed = validateInventarioItemPayload(req.body);
+  if (parsed.error) {
+    return res.status(400).json(parsed);
+  }
+
+  const { insumo, presentacion, tamano, stock, requerir } = parsed.value;
+
+  try {
+    const numeroAuto =
+      db.prepare("SELECT COALESCE(MAX(numero), 0) + 1 as next_numero FROM inventario_insumos").get()?.next_numero ?? 1;
+
+    const result = db
+      .prepare(
+        `INSERT INTO inventario_insumos (
+          numero,
+          insumo,
+          presentacion,
+          tamano_presentacion,
+          stock,
+          total,
+          requerir_2026
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(numeroAuto, insumo, presentacion, tamano, stock, stock, requerir);
+
+    const created = getInventarioById(result.lastInsertRowid);
+    return res.status(201).json(created);
+  } catch (error) {
+    return res.status(400).json({
+      error: "No se pudo crear el insumo",
+      detail: error.message,
+    });
+  }
+});
+
+// ENDPOINT PATCH: Actualizar datos base de un item
+app.patch("/api/inventario/:id", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const item = getInventarioById(id);
+  if (!item) {
+    return res.status(404).json({ error: "Insumo no encontrado" });
+  }
+
+  const parsed = validateInventarioItemPayload(req.body);
+  if (parsed.error) {
+    return res.status(400).json(parsed);
+  }
+
+  const { insumo, presentacion, tamano, stock, requerir } = parsed.value;
+  const deltaStock = stock - item.stock;
+
+  try {
+    // CAMBIO: Al editar stock base se ajusta total para mantener coherencia entre saldo y movimientos.
+    db.prepare(
+      `UPDATE inventario_insumos
+       SET insumo = ?,
+           presentacion = ?,
+           tamano_presentacion = ?,
+           stock = ?,
+           total = total + ?,
+           requerir_2026 = ?,
+           updated_at = datetime('now', 'localtime')
+       WHERE id = ?`
+    ).run(insumo, presentacion, tamano, stock, deltaStock, requerir, id);
+
+    const updated = getInventarioById(id);
+    return res.json(updated);
+  } catch (error) {
+    return res.status(400).json({
+      error: "No se pudo actualizar el insumo",
+      detail: error.message,
+    });
+  }
+});
+
+// ENDPOINT DELETE: Eliminar item de inventario
+app.delete("/api/inventario/:id", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const item = getInventarioById(id);
+  if (!item) {
+    return res.status(404).json({ error: "Insumo no encontrado" });
+  }
+
+  db.prepare("DELETE FROM inventario_insumos WHERE id = ?").run(id);
+  return res.json({ ok: true });
+});
+
+// ENDPOINT PATCH: Registrar entrada o salida para un insumo de inventario
+app.patch("/api/inventario/:id/movimiento", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const tipo = typeof req.body?.tipo === "string" ? req.body.tipo.trim().toUpperCase() : "";
+  const cantidad = Number(req.body?.cantidad);
+  const mes = typeof req.body?.mes === "string" ? req.body.mes.trim().toLowerCase() : "";
+  const detalle = typeof req.body?.detalle === "string" ? req.body.detalle.trim() : "";
+  const responsable = typeof req.body?.responsable === "string" ? req.body.responsable.trim() : "";
+
+  if (!["ENTRADA", "SALIDA"].includes(tipo)) {
+    return res.status(400).json({ error: "Tipo de movimiento invalido" });
+  }
+
+  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+    return res.status(400).json({ error: "Cantidad invalida" });
+  }
+
+  if (!responsable) {
+    return res.status(400).json({ error: "Responsable es obligatorio" });
+  }
+
+  if (tipo === "SALIDA" && !inventarioMeses.includes(mes)) {
+    return res.status(400).json({ error: "Mes invalido para registrar salida" });
+  }
+
+  try {
+    const updated = registrarMovimientoTx({ id, tipo, cantidad, mes, detalle, responsable });
+    return res.json(updated);
+  } catch (error) {
+    const status = error.message === "Insumo no encontrado" ? 404 : 400;
+    return res.status(status).json({
+      error: "No se pudo registrar el movimiento",
+      detail: error.message,
+    });
+  }
+});
+
+// ENDPOINT PATCH: Corregir un movimiento cargado por error en inventario
+app.patch("/api/inventario/:id/correccion", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const tipo = typeof req.body?.tipo === "string" ? req.body.tipo.trim().toUpperCase() : "";
+  const cantidad = Number(req.body?.cantidad);
+  const mes = typeof req.body?.mes === "string" ? req.body.mes.trim().toLowerCase() : "";
+  const detalle = typeof req.body?.detalle === "string" ? req.body.detalle.trim() : "";
+  const responsable = typeof req.body?.responsable === "string" ? req.body.responsable.trim() : "";
+
+  if (!["ENTRADA", "SALIDA"].includes(tipo)) {
+    return res.status(400).json({ error: "Tipo de movimiento invalido" });
+  }
+
+  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+    return res.status(400).json({ error: "Cantidad invalida" });
+  }
+
+  if (!responsable) {
+    return res.status(400).json({ error: "Responsable es obligatorio" });
+  }
+
+  if (tipo === "SALIDA" && !inventarioMeses.includes(mes)) {
+    return res.status(400).json({ error: "Mes invalido para corregir salida" });
+  }
+
+  try {
+    const updated = corregirMovimientoTx({ id, tipo, cantidad, mes, detalle, responsable });
+    return res.json(updated);
+  } catch (error) {
+    const status = error.message === "Insumo no encontrado" ? 404 : 400;
+    return res.status(status).json({
+      error: "No se pudo corregir el movimiento",
+      detail: error.message,
+    });
+  }
 });
 
 // INICIAR EL SERVIDOR: Escuchar en el puerto y host configurados

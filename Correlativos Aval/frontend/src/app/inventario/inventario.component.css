@@ -1,0 +1,165 @@
+.inventario-page {
+  display: grid;
+  gap: 1rem;
+}
+
+mat-tab-group {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+mat-tab-group mat-card {
+  margin: 0.75rem;
+}
+
+.resumen-card h2 {
+  margin: 0;
+}
+
+.sub {
+  margin: 0.35rem 0 1rem;
+  color: #385566;
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.kpi {
+  border: 1px solid #d7e7ef;
+  border-radius: 12px;
+  background: #f7fbfd;
+  padding: 0.75rem;
+}
+
+.kpi .label {
+  display: block;
+  font-size: 0.8rem;
+  color: #4c6777;
+}
+
+.kpi strong {
+  font-size: 1.35rem;
+}
+
+.acciones-grid,
+.crud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+}
+
+.filtro {
+  width: min(460px, 100%);
+}
+
+.detalle {
+  grid-column: span 2;
+}
+
+.responsable-field {
+  grid-column: span 2;
+}
+
+.acciones-boton {
+  display: flex;
+  align-items: flex-start;
+}
+
+.btn-base {
+  border-radius: 10px !important;
+  min-height: 40px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  min-width: 150px;
+}
+
+.btn-primary {
+  background: #1663b9 !important;
+  color: #fff !important;
+}
+
+.btn-neutral {
+  background: #e9f0f6 !important;
+  color: #0f3c5c !important;
+}
+
+.btn-danger {
+  background: #f8dede !important;
+  color: #8d1f1f !important;
+}
+
+.mensaje {
+  margin-top: 0.5rem;
+  color: #26495d;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e2edf3;
+  padding: 0.62rem 0.55rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #f4f9fc;
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+.fila-seleccionada {
+  background: #eaf5fb;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 36, 49, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 1200;
+  padding: 1rem;
+}
+
+.modal-card {
+  width: min(920px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
+  border: 1px solid #d9e8f2;
+}
+
+.modal-card h3 {
+  margin-top: 0;
+}
+
+.modal-card-sm {
+  width: min(420px, 100%);
+}
+
+.modal-responsable-input {
+  width: 100%;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

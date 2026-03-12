@@ -1,0 +1,200 @@
+<section class="inventario-page">
+  <mat-card class="resumen-card">
+    <h2>Inventario de Insumos</h2>
+    <p class="sub">Flujo recomendado: crear/editar insumo -> registrar movimiento -> auditar historial.</p>
+    <div class="resumen-grid">
+      <div class="kpi"><span class="label">Lineas</span><strong>{{ resumen().lineas }}</strong></div>
+      <div class="kpi"><span class="label">Stock total</span><strong>{{ resumen().totalStock }}</strong></div>
+      <div class="kpi"><span class="label">Egresos</span><strong>{{ resumen().totalEgresos }}</strong></div>
+      <div class="kpi"><span class="label">Requerir 2026</span><strong>{{ resumen().totalRequerido }}</strong></div>
+    </div>
+  </mat-card>
+
+  @if (mensaje()) {
+    <p class="mensaje">{{ mensaje() }}</p>
+  }
+
+  <mat-tab-group>
+    <mat-tab label="Insumos">
+      <mat-card>
+        <h3>Listado de insumos</h3>
+        <div class="acciones-grid">
+          <mat-form-field appearance="outline" class="filtro">
+            <mat-label>Buscar insumo</mat-label>
+            <input matInput [formControl]="filtro" placeholder="Ejemplo: pasta termica" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Insumo</mat-label>
+            <mat-select [formControl]="itemId">
+              @for (item of items(); track item.id) {
+                <mat-option [value]="item.id">{{ item.insumo }} - {{ item.tamano_presentacion }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="acciones-boton">
+            <button mat-flat-button class="btn-base btn-primary" (click)="abrirModalNuevo()">Nuevo insumo</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Correlativo</th><th>Insumo</th><th>Presentacion</th><th>Tamano</th><th>Stock</th><th>Entrada</th><th>Egresos</th><th>Total</th><th>Requerir 2026</th><th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.id) {
+                <tr [class.fila-seleccionada]="item.id === itemId.value" (click)="abrirModalEditar(item)">
+                  <td>{{ item.correlativo }}</td>
+                  <td>{{ item.insumo }}</td>
+                  <td>{{ item.presentacion }}</td>
+                  <td>{{ item.tamano_presentacion }}</td>
+                  <td>{{ item.stock }}</td>
+                  <td>{{ item.entrada }}</td>
+                  <td>{{ item.egresos }}</td>
+                  <td>{{ item.total }}</td>
+                  <td>{{ item.requerir_2026 }}</td>
+                  <td><button mat-stroked-button class="btn-base btn-neutral">Editar</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card>
+    </mat-tab>
+
+    <mat-tab label="Movimientos">
+      <mat-card>
+        <h3>Registrar entrada/salida</h3>
+        <div class="acciones-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Insumo</mat-label>
+            <mat-select [formControl]="itemId">
+              @for (item of items(); track item.id) {
+                <mat-option [value]="item.id">{{ item.insumo }} - {{ item.tamano_presentacion }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <mat-select [formControl]="tipo">
+              <mat-option value="ENTRADA">Entrada</mat-option>
+              <mat-option value="SALIDA">Salida</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          @if (tipo.value === 'SALIDA') {
+            <mat-form-field appearance="outline">
+              <mat-label>Mes</mat-label>
+              <mat-select [formControl]="mes">
+                @for (m of meses; track m) {
+                  <mat-option [value]="m">{{ m }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          <mat-form-field appearance="outline"><mat-label>Cantidad</mat-label><input matInput type="number" min="1" [formControl]="cantidad" /></mat-form-field>
+          <mat-form-field appearance="outline" class="responsable-field">
+            <mat-label>Responsable</mat-label>
+            <mat-select [formControl]="responsable">
+              @for (user of responsables(); track user.id) {
+                <mat-option [value]="user.nombre">{{ user.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="detalle"><mat-label>Detalle</mat-label><input matInput [formControl]="detalle" placeholder="Motivo u observacion" /></mat-form-field>
+
+          <div class="acciones-boton"><button mat-flat-button class="btn-base btn-primary" (click)="registrarMovimiento()" [disabled]="procesando()">Registrar movimiento</button></div>
+          <div class="acciones-boton"><button mat-flat-button class="btn-base btn-neutral" (click)="corregirMovimiento()" [disabled]="procesando()">Corregir movimiento</button></div>
+          <div class="acciones-boton"><button mat-flat-button class="btn-base btn-neutral" (click)="abrirModalResponsable()">Agregar responsable</button></div>
+        </div>
+      </mat-card>
+    </mat-tab>
+
+    <mat-tab label="Historial">
+      <mat-card>
+        <h3>Movimientos realizados</h3>
+        <div class="acciones-grid">
+          <mat-form-field appearance="outline"><mat-label>Buscar insumo</mat-label><input matInput [formControl]="historialQ" placeholder="Nombre o presentacion" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Tipo</mat-label><mat-select [formControl]="historialTipo"><mat-option value="">Todos</mat-option><mat-option value="ENTRADA">ENTRADA</mat-option><mat-option value="SALIDA">SALIDA</mat-option><mat-option value="CORRECCION_ENTRADA">CORRECCION_ENTRADA</mat-option><mat-option value="CORRECCION_SALIDA">CORRECCION_SALIDA</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Responsable</mat-label><input matInput [formControl]="historialResponsable" /></mat-form-field>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Insumo</th><th>Tipo</th><th>Responsable</th><th>Mes</th><th>Cantidad</th><th>Detalle</th></tr>
+            </thead>
+            <tbody>
+              @for (mov of movimientosGlobal(); track mov.id) {
+                <tr>
+                  <td>{{ formatDmy(mov.created_at) }}</td>
+                  <td>{{ mov.insumo }} - {{ mov.tamano_presentacion }}</td>
+                  <td>{{ mov.tipo }}</td>
+                  <td>{{ mov.responsable }}</td>
+                  <td>{{ mov.mes ?? '-' }}</td>
+                  <td>{{ mov.cantidad }}</td>
+                  <td>{{ mov.detalle ?? '-' }}</td>
+                </tr>
+              }
+              @if (movimientosGlobal().length === 0) {
+                <tr><td colspan="7">Sin movimientos para los filtros seleccionados.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card>
+    </mat-tab>
+  </mat-tab-group>
+
+  @if (modalAbierto()) {
+    <div class="modal-backdrop">
+      <div class="modal-card">
+        <h3>{{ modalModo() === 'create' ? 'Nuevo insumo' : 'Editar insumo' }}</h3>
+        <div class="crud-grid">
+          @if (modalModo() === 'edit') {
+            <mat-form-field appearance="outline"><mat-label>Correlativo</mat-label><input matInput [value]="getModalCorrelativo()" readonly /></mat-form-field>
+          }
+          <mat-form-field appearance="outline"><mat-label>Insumo</mat-label><input matInput [formControl]="modalInsumo" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Presentacion</mat-label><input matInput [formControl]="modalPresentacion" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Tamano Presentacion</mat-label><input matInput [formControl]="modalTamano" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Stock base</mat-label><input matInput type="number" min="0" [formControl]="modalStock" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Requerir 2026</mat-label><input matInput type="number" min="0" [formControl]="modalRequerir" /></mat-form-field>
+        </div>
+
+        <div class="modal-actions">
+          <button mat-flat-button class="btn-base btn-primary" (click)="guardarModal()" [disabled]="procesando()">Guardar cambios</button>
+          <button mat-flat-button class="btn-base btn-neutral" (click)="cerrarModal()">Cancelar</button>
+          @if (modalModo() === 'edit') {
+            <button mat-flat-button class="btn-base btn-danger" (click)="eliminarDesdeModal()" [disabled]="procesando()">Eliminar</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modalResponsableAbierto()) {
+    <div class="modal-backdrop">
+      <div class="modal-card modal-card-sm">
+        <h3>Agregar responsable</h3>
+        <mat-form-field appearance="outline" class="modal-responsable-input">
+          <mat-label>Nombre completo</mat-label>
+          <input matInput [formControl]="modalResponsableNombre" />
+        </mat-form-field>
+        <div class="modal-actions">
+          <button mat-flat-button class="btn-base btn-primary" (click)="crearResponsable()">Guardar</button>
+          <button mat-flat-button class="btn-base btn-neutral" (click)="cerrarModalResponsable()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="mensaje">Cargando inventario...</p>
+  }
+</section>

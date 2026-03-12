@@ -1,0 +1,15 @@
+.avales-page {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tabs-shell {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 0.5rem;
+  border: 1px solid #dce8ef;
+}
+
+.avales-content {
+  padding-top: 0.25rem;
+}

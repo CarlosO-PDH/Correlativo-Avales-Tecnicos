@@ -119,11 +119,11 @@ export class RegistroComponent {
     const editingId = this.editingId();
     if (editingId) {
       this.avalesService.update(editingId, payload).subscribe({
-        next: () => {
-          this.successMessage.set('Aval actualizado correctamente.');
-          this.saving.set(false);
-          this.router.navigate(['/historial']);
-        },
+          next: () => {
+            this.successMessage.set('Aval actualizado correctamente.');
+            this.saving.set(false);
+            this.router.navigate(['/avales/historial']);
+          },
         error: (error) => {
           this.errorMessage.set(error?.error?.error ?? 'No se pudo actualizar el aval.');
           this.saving.set(false);
@@ -146,7 +146,7 @@ export class RegistroComponent {
   }
 
   protected cancelEdit() {
-    this.router.navigate(['/registro']);
+    this.router.navigate(['/avales/registro']);
     this.resetForm();
     this.clearMessages();
   }

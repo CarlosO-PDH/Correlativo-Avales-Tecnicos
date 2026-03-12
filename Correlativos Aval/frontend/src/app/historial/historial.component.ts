@@ -249,7 +249,7 @@ export class HistorialComponent {
   }
 
   protected startEdit(aval: Aval) {
-    this.router.navigate(['/registro'], { queryParams: { id: aval.id } });
+    this.router.navigate(['/avales/registro'], { queryParams: { id: aval.id } });
   }
 
   protected anularAval(aval: Aval) {

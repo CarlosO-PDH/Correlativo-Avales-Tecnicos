@@ -1,0 +1,23 @@
+# Reemplaza {tu_dominio} con: avalestecnicosdti.duckdns.org
+
+{
+    email tu_correo@ejemplo.com
+}
+
+avalestecnicosdti.duckdns.org {
+    # Basic Auth - usuario: admin
+    # Genera tu hash con: caddy hash-password
+    basicauth /* {
+        admin $2a$14$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    }
+
+    # Proxy al backend
+    reverse_proxy /* backend:3000
+
+    # Headers de seguridad
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
