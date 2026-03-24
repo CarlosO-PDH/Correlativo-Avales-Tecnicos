@@ -70,20 +70,54 @@
             ></mat-paginator>
           </div>
           <table>
+            <colgroup>
+              <col [style.width.px]="getColumnWidth('correlativo')" />
+              <col [style.width.px]="getColumnWidth('insumo')" />
+              <col [style.width.px]="getColumnWidth('presentacion')" />
+              <col [style.width.px]="getColumnWidth('tamano')" />
+              <col [style.width.px]="getColumnWidth('stockMinimo')" />
+              <col [style.width.px]="getColumnWidth('stockActual')" />
+              <col [style.width.px]="getColumnWidth('ingresos')" />
+              <col [style.width.px]="getColumnWidth('egresos')" />
+              <col [style.width.px]="getColumnWidth('total')" />
+              <col [style.width.px]="getColumnWidth('requerimientoAnual')" />
+              <col [style.width.px]="getColumnWidth('accion')" />
+            </colgroup>
             <thead>
               <tr>
                 <!-- CAMBIO: Reordenado, renombrado y campo nuevo -->
-                <th>Correlativo</th>
-                <th>Insumo</th>
-                <th>Presentacion</th>
-                <th>Tamaño</th>
-                <th>Stock mínimo</th>
-                <th>Stock actual</th>
-                <th>Ingresos</th>
-                <th>Egresos</th>
-                <th>Total</th>
-                <th>Requerimiento Anual</th>
-                <th>Accion</th>
+                <th>
+                  <div class="th-content">
+                    <button type="button" class="sort-btn" (click)="toggleSort('correlativo')">
+                      Correlativo <span>{{ getSortIcon('correlativo') }}</span>
+                    </button>
+                    <span class="resize-handle" (mousedown)="startResize($event, 'correlativo')"></span>
+                  </div>
+                </th>
+                <th>
+                  <div class="th-content">
+                    <button type="button" class="sort-btn" (click)="toggleSort('insumo')">
+                      Insumo <span>{{ getSortIcon('insumo') }}</span>
+                    </button>
+                    <span class="resize-handle" (mousedown)="startResize($event, 'insumo')"></span>
+                  </div>
+                </th>
+                <th><div class="th-content"><span class="th-title">Presentacion</span><span class="resize-handle" (mousedown)="startResize($event, 'presentacion')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Tamaño</span><span class="resize-handle" (mousedown)="startResize($event, 'tamano')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Stock mínimo</span><span class="resize-handle" (mousedown)="startResize($event, 'stockMinimo')"></span></div></th>
+                <th>
+                  <div class="th-content">
+                    <button type="button" class="sort-btn" (click)="toggleSort('stockActual')">
+                      Stock actual <span>{{ getSortIcon('stockActual') }}</span>
+                    </button>
+                    <span class="resize-handle" (mousedown)="startResize($event, 'stockActual')"></span>
+                  </div>
+                </th>
+                <th><div class="th-content"><span class="th-title">Ingresos</span><span class="resize-handle" (mousedown)="startResize($event, 'ingresos')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Egresos</span><span class="resize-handle" (mousedown)="startResize($event, 'egresos')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Total</span><span class="resize-handle" (mousedown)="startResize($event, 'total')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Requerimiento Anual</span><span class="resize-handle" (mousedown)="startResize($event, 'requerimientoAnual')"></span></div></th>
+                <th><div class="th-content"><span class="th-title">Accion</span><span class="resize-handle" (mousedown)="startResize($event, 'accion')"></span></div></th>
               </tr>
             </thead>
             <tbody>

@@ -34,12 +34,78 @@ import { InventarioService } from './inventario.service';
 export class InventarioComponent {
   // CAMBIO: Timer para autocierre del modal de resultado en 3 segundos.
   private resultadoTimer: ReturnType<typeof setTimeout> | null = null;
+  // CAMBIO: Estado interno para redimensionamiento manual de columnas en tabla de insumos.
+  private resizingColumn: string | null = null;
+  private resizeStartX = 0;
+  private resizeStartWidth = 0;
   // --- Paginación para tabla de insumos ---
   readonly pageSize = signal<10 | 25 | 50>(25);
   readonly pageIndex = signal(0); // 0-based
 
+  // CAMBIO: Estado de ordenamiento para que el usuario pueda ordenar la tabla con flechas.
+  readonly sortColumn = signal<'numero' | 'correlativo' | 'insumo' | 'stockActual'>('numero');
+  readonly sortDirection = signal<'asc' | 'desc'>('asc');
+  // CAMBIO: Anchos iniciales por columna para permitir ajuste tipo Excel (arrastrar encabezado).
+  readonly insumosColumnWidths = signal<Record<string, number>>({
+    correlativo: 130,
+    insumo: 220,
+    presentacion: 140,
+    tamano: 150,
+    stockMinimo: 120,
+    stockActual: 120,
+    ingresos: 110,
+    egresos: 110,
+    total: 110,
+    requerimientoAnual: 170,
+    accion: 110
+  });
+
+  private readonly onResizeMouseMove = (event: MouseEvent) => {
+    if (!this.resizingColumn) return;
+
+    const delta = event.clientX - this.resizeStartX;
+    const nextWidth = Math.max(90, this.resizeStartWidth + delta);
+    const current = this.insumosColumnWidths();
+
+    this.insumosColumnWidths.set({
+      ...current,
+      [this.resizingColumn]: nextWidth
+    });
+  };
+
+  private readonly onResizeMouseUp = () => {
+    if (!this.resizingColumn) return;
+    this.resizingColumn = null;
+    window.removeEventListener('mousemove', this.onResizeMouseMove);
+    window.removeEventListener('mouseup', this.onResizeMouseUp);
+  };
+
+  readonly sortedItems = computed(() => {
+    const column = this.sortColumn();
+    const direction = this.sortDirection() === 'asc' ? 1 : -1;
+    const rows = [...this.items()];
+
+    rows.sort((a, b) => {
+      if (column === 'numero') {
+        return (a.numero - b.numero) * direction;
+      }
+
+      if (column === 'stockActual') {
+        const stockA = a.entrada - a.egresos;
+        const stockB = b.entrada - b.egresos;
+        return (stockA - stockB) * direction;
+      }
+
+      const valueA = (a[column] ?? '').toString().toLowerCase();
+      const valueB = (b[column] ?? '').toString().toLowerCase();
+      return valueA.localeCompare(valueB) * direction;
+    });
+
+    return rows;
+  });
+
   get pagedItems() {
-    const all = this.items();
+    const all = this.sortedItems();
     const start = this.pageIndex() * this.pageSize();
     return all.slice(start, start + this.pageSize());
   }
@@ -47,6 +113,21 @@ export class InventarioComponent {
   onPage(event: any) {
     this.pageSize.set(event.pageSize);
     this.pageIndex.set(event.pageIndex);
+  }
+
+  toggleSort(column: 'numero' | 'correlativo' | 'insumo' | 'stockActual') {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+
+    this.sortColumn.set(column);
+    this.sortDirection.set('asc');
+  }
+
+  getSortIcon(column: 'numero' | 'correlativo' | 'insumo' | 'stockActual') {
+    if (this.sortColumn() !== column) return '↕';
+    return this.sortDirection() === 'asc' ? '▲' : '▼';
   }
   private readonly inventarioService = inject(InventarioService);
   private readonly destroyRef = inject(DestroyRef);
@@ -150,6 +231,26 @@ export class InventarioComponent {
     this.ajusteCantidad = new FormControl<number>(0, { nonNullable: true });
     this.ajusteResponsable = new FormControl<string>('', { nonNullable: true });
     this.ajusteDetalle = new FormControl<string>('', { nonNullable: true });
+
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('mousemove', this.onResizeMouseMove);
+      window.removeEventListener('mouseup', this.onResizeMouseUp);
+    });
+  }
+
+  startResize(event: MouseEvent, column: string) {
+    // CAMBIO: Inicio de arrastre para redimensionar una columna específica.
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingColumn = column;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidth = this.insumosColumnWidths()[column] ?? 120;
+    window.addEventListener('mousemove', this.onResizeMouseMove);
+    window.addEventListener('mouseup', this.onResizeMouseUp);
+  }
+
+  getColumnWidth(column: string) {
+    return this.insumosColumnWidths()[column] ?? 120;
   }
 
   abrirModalNuevo() {

@@ -145,6 +145,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px; /* CAMBIO: ancho mínimo para tabla grande */
+  table-layout: fixed;
 }
 
 @media (max-width: 900px) {
@@ -170,11 +171,58 @@ td {
   border-bottom: 1px solid #e2edf3;
   padding: 0.62rem 0.55rem;
   text-align: left;
+}
+
+td {
   white-space: nowrap;
 }
 
 th {
+  white-space: normal;
+}
+
+th {
   background: #f4f9fc;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #143e58;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sort-btn span {
+  font-size: 0.78rem;
+  color: #4f6d80;
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.th-title {
+  font-weight: 700;
+  color: #143e58;
+}
+
+.resize-handle {
+  flex: 0 0 8px;
+  align-self: stretch;
+  cursor: col-resize;
+  border-right: 2px solid transparent;
+}
+
+.resize-handle:hover {
+  border-right-color: #7aa4be;
 }
 
 tbody tr {
