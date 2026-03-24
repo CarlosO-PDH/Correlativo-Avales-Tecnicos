@@ -13,8 +13,22 @@ mat-tab-group mat-card {
   margin: 0.75rem;
 }
 
-.resumen-card h2 {
+
+/* CAMBIO: Título centrado y más grande */
+.resumen-titulo {
   margin: 0;
+  text-align: center;
+  font-size: 2.1rem;
+  font-weight: bold;
+  letter-spacing: 0.01em;
+}
+
+/* CAMBIO: Texto de flujo alineado a la izquierda */
+.resumen-flujo {
+  text-align: left;
+  margin: 0.35rem 0 1rem 0;
+  color: #385566;
+  font-size: 1.05rem;
 }
 
 .sub {
@@ -22,27 +36,48 @@ mat-tab-group mat-card {
   color: #385566;
 }
 
+
+/* CAMBIO: KPIs centrados y mejor visual */
 .resumen-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.1rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
+.resumen-card {
+  text-align: right;
+}
+
+
+/* CAMBIO: KPI bloques centrados y visual mejorado */
 .kpi {
   border: 1px solid #d7e7ef;
   border-radius: 12px;
   background: #f7fbfd;
-  padding: 0.75rem;
+  padding: 0.95rem 1.5rem;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 8px 0 rgba(30, 60, 90, 0.06);
 }
 
 .kpi .label {
   display: block;
-  font-size: 0.8rem;
-  color: #4c6777;
+  font-size: 1rem;
+  color: #2a4a5c;
+  margin-bottom: 0.25rem;
+  text-align: center;
 }
 
 .kpi strong {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #0f3c5c;
+  text-align: center;
 }
 
 .acciones-grid,
@@ -67,6 +102,7 @@ mat-tab-group mat-card {
 .acciones-boton {
   display: flex;
   align-items: flex-start;
+  justify-content: center /* Alinea al centro horizontalmente */;
 }
 
 .btn-base {
@@ -98,8 +134,30 @@ mat-tab-group mat-card {
   font-weight: 600;
 }
 
+
+/* CAMBIO: Tabla responsive */
 .table-wrap {
   overflow-x: auto;
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px; /* CAMBIO: ancho mínimo para tabla grande */
+}
+
+@media (max-width: 900px) {
+  .table-wrap {
+    padding: 0.5rem;
+  }
+  table {
+    min-width: 600px;
+    font-size: 0.92rem;
+  }
+  th, td {
+    padding: 0.35rem 0.25rem;
+  }
 }
 
 table {
@@ -162,4 +220,19 @@ tbody tr {
   gap: 0.55rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.modal-backdrop-result {
+  z-index: 1400;
+}
+
+.modal-result-card {
+  width: min(420px, 100%);
+  text-align: center;
+}
+
+.modal-result-card p {
+  margin: 0.5rem 0 1rem;
+  color: #1e4157;
+  font-weight: 600;
 }

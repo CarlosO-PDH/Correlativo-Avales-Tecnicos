@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
 import { formatDmy } from '../date-utils';
 import { InventarioItem, InventarioMovimiento, InventarioResponsable } from './inventario.model';
@@ -15,20 +16,38 @@ import { InventarioService } from './inventario.service';
 
 @Component({
   selector: 'app-inventario',
+  standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatButtonModule,
-    MatTabsModule
+    MatTabsModule,
+    MatPaginatorModule
   ],
   templateUrl: './inventario.component.html',
   styleUrl: './inventario.component.css'
 })
 export class InventarioComponent {
+  // CAMBIO: Timer para autocierre del modal de resultado en 3 segundos.
+  private resultadoTimer: ReturnType<typeof setTimeout> | null = null;
+  // --- Paginación para tabla de insumos ---
+  readonly pageSize = signal<10 | 25 | 50>(25);
+  readonly pageIndex = signal(0); // 0-based
+
+  get pagedItems() {
+    const all = this.items();
+    const start = this.pageIndex() * this.pageSize();
+    return all.slice(start, start + this.pageSize());
+  }
+
+  onPage(event: any) {
+    this.pageSize.set(event.pageSize);
+    this.pageIndex.set(event.pageIndex);
+  }
   private readonly inventarioService = inject(InventarioService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly formatDmy = formatDmy;
@@ -54,15 +73,34 @@ export class InventarioComponent {
   readonly modalInsumo = new FormControl('', { nonNullable: true });
   readonly modalPresentacion = new FormControl('', { nonNullable: true });
   readonly modalTamano = new FormControl('', { nonNullable: true });
-  readonly modalStock = new FormControl<number>(0, { nonNullable: true });
-  readonly modalRequerir = new FormControl<number>(0, { nonNullable: true });
+  // CAMBIO: Controles para todos los campos editables en el modal
+  readonly modalStock = new FormControl<number>(0, { nonNullable: true }); // Stock actual
+  readonly modalRequerir = new FormControl<number>(0, { nonNullable: true }); // Stock mínimo
+  readonly modalEntrada = new FormControl<number>(0, { nonNullable: true }); // Ingresos
+  readonly modalEgresos = new FormControl<number>(0, { nonNullable: true }); // Egresos
+  readonly modalRequerimientoAnual = new FormControl<number>(0, { nonNullable: true }); // Requerimiento Anual
 
   readonly items = signal<InventarioItem[]>([]);
   readonly responsables = signal<InventarioResponsable[]>([]);
   readonly movimientosGlobal = signal<InventarioMovimiento[]>([]);
+  
+  // CAMBIO: Computed property que calcula resumen de totales del inventario
+  // Stock = entrada - egresos (se calcula, no se almacena en base de datos)
+  readonly resumen = computed(() => {
+    const items = this.items();
+    return {
+      totalStock: items.reduce((sum, item) => sum + (item.entrada - item.egresos), 0),
+      totalEgresos: items.reduce((sum, item) => sum + (item.egresos || 0), 0),
+      totalIngresos: items.reduce((sum, item) => sum + (item.entrada || 0), 0)
+    };
+  });
+
   readonly cargando = signal(false);
   readonly procesando = signal(false);
   readonly mensaje = signal('');
+  // CAMBIO: Estado del modal de resultado para confirmar acciones exitosas al usuario.
+  readonly modalResultadoAbierto = signal(false);
+  readonly modalResultadoTexto = signal('');
 
   readonly meses = [
     'enero',
@@ -79,15 +117,12 @@ export class InventarioComponent {
     'diciembre'
   ] as const;
 
-  readonly resumen = computed(() => {
-    const base = this.items();
-    return {
-      lineas: base.length,
-      totalStock: base.reduce((acc, item) => acc + item.total, 0),
-      totalRequerido: base.reduce((acc, item) => acc + item.requerir_2026, 0),
-      totalEgresos: base.reduce((acc, item) => acc + item.egresos, 0)
-    };
-  });
+  // CAMBIO: Declaración de FormControls para ajustes de inventario
+  ajusteTipo!: FormControl<'CORRECCION_ENTRADA' | 'CORRECCION_SALIDA' | 'AJUSTE_MANUAL'>;
+  ajusteOperacion!: FormControl<'suma' | 'resta'>;
+  ajusteCantidad!: FormControl<number>;
+  ajusteResponsable!: FormControl<string>;
+  ajusteDetalle!: FormControl<string>;
 
   constructor() {
     // CAMBIO: Flujo por pestañas con recarga reactiva para inventario e historial.
@@ -108,6 +143,13 @@ export class InventarioComponent {
       .subscribe(() => this.cargarHistorialGlobal());
 
     this.cargarResponsables();
+
+    // CAMBIO: Inicialización de FormControls de ajustes de inventario
+    this.ajusteTipo = new FormControl<'CORRECCION_ENTRADA' | 'CORRECCION_SALIDA' | 'AJUSTE_MANUAL'>('AJUSTE_MANUAL', { nonNullable: true });
+    this.ajusteOperacion = new FormControl<'suma' | 'resta'>('resta', { nonNullable: true });
+    this.ajusteCantidad = new FormControl<number>(0, { nonNullable: true });
+    this.ajusteResponsable = new FormControl<string>('', { nonNullable: true });
+    this.ajusteDetalle = new FormControl<string>('', { nonNullable: true });
   }
 
   abrirModalNuevo() {
@@ -118,6 +160,9 @@ export class InventarioComponent {
     this.modalTamano.setValue('');
     this.modalStock.setValue(0);
     this.modalRequerir.setValue(0);
+    this.modalEntrada.setValue(0);
+    this.modalEgresos.setValue(0);
+    this.modalRequerimientoAnual.setValue(0);
     this.modalAbierto.set(true);
   }
 
@@ -130,6 +175,9 @@ export class InventarioComponent {
     this.modalTamano.setValue(item.tamano_presentacion);
     this.modalStock.setValue(item.stock);
     this.modalRequerir.setValue(item.requerir_2026);
+    this.modalEntrada.setValue(item.entrada);
+    this.modalEgresos.setValue(item.egresos);
+    this.modalRequerimientoAnual.setValue(item.requerir_2026); // Si es diferente, ajustar aquí
     this.modalAbierto.set(true);
   }
 
@@ -152,7 +200,8 @@ export class InventarioComponent {
           next: (created) => {
             this.procesando.set(false);
             this.modalAbierto.set(false);
-            this.setMensaje('Insumo creado correctamente.');
+            // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+            this.mostrarResultadoExitoso('Insumo creado correctamente.');
             this.cargarInventario(this.filtro.value, created.id);
           },
           error: (error) => {
@@ -177,7 +226,8 @@ export class InventarioComponent {
         next: () => {
           this.procesando.set(false);
           this.modalAbierto.set(false);
-          this.setMensaje('Insumo actualizado correctamente.');
+          // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+          this.mostrarResultadoExitoso('Insumo actualizado correctamente.');
           this.cargarInventario(this.filtro.value, id);
         },
         error: (error) => {
@@ -208,7 +258,8 @@ export class InventarioComponent {
           this.procesando.set(false);
           this.modalAbierto.set(false);
           this.itemId.setValue(null, { emitEvent: false });
-          this.setMensaje('Insumo eliminado correctamente.');
+          // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+          this.mostrarResultadoExitoso('Insumo eliminado correctamente.');
           this.cargarInventario(this.filtro.value);
           this.cargarHistorialGlobal();
         },
@@ -296,7 +347,8 @@ export class InventarioComponent {
           this.modalResponsableNombre.setValue('');
           this.modalResponsableAbierto.set(false);
           this.responsable.setValue(created.nombre);
-          this.setMensaje('Responsable agregado correctamente.');
+          // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+          this.mostrarResultadoExitoso('Responsable agregado correctamente.');
           this.cargarResponsables();
         },
         error: (error) => {
@@ -319,7 +371,8 @@ export class InventarioComponent {
     this.procesando.set(false);
     this.cantidad.setValue(1);
     this.detalle.setValue('');
-    this.setMensaje(mensaje);
+    // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+    this.mostrarResultadoExitoso(mensaje);
     this.cargarInventario(this.filtro.value, this.itemId.value ?? undefined);
     this.cargarHistorialGlobal();
   }
@@ -334,6 +387,7 @@ export class InventarioComponent {
         next: (rows) => {
           this.items.set(rows);
           this.cargando.set(false);
+          this.pageIndex.set(0); // Reiniciar a la primera página al filtrar/cargar
 
           if (rows.length === 0) {
             this.itemId.setValue(null, { emitEvent: false });
@@ -389,23 +443,30 @@ export class InventarioComponent {
     const tamano = this.modalTamano.value.trim();
     const stock = Number(this.modalStock.value);
     const requerir = Number(this.modalRequerir.value);
+    const entrada = Number(this.modalEntrada.value);
+    const egresos = Number(this.modalEgresos.value);
+    const requerimientoAnual = Number(this.modalRequerimientoAnual.value);
 
     if (!insumo || !presentacion || !tamano) {
       this.setMensaje('Completa insumo, presentacion y tamano.');
       return null;
     }
-
-    if (!Number.isInteger(stock) || stock < 0 || !Number.isInteger(requerir) || requerir < 0) {
-      this.setMensaje('Stock y requerir 2026 deben ser enteros positivos.');
+    // Validaciones básicas
+    if ([stock, requerir, entrada, egresos, requerimientoAnual].some(v => !Number.isInteger(v) || v < 0)) {
+      this.setMensaje('Todos los campos numéricos deben ser enteros positivos.');
       return null;
     }
 
+    // CAMBIO: Devuelve todos los campos editables (ajustar backend si es necesario)
     return {
       insumo,
       presentacion,
       tamano_presentacion: tamano,
       stock,
-      requerir_2026: requerir
+      requerir_2026: requerir,
+      entrada,
+      egresos,
+      requerimiento_anual: requerimientoAnual
     };
   }
 
@@ -416,5 +477,82 @@ export class InventarioComponent {
   getModalCorrelativo() {
     const id = this.modalItemId();
     return this.items().find((item) => item.id === id)?.correlativo ?? '';
+  }
+
+  // --- Ajustes de inventario ---
+  registrarAjuste() {
+    const id = this.itemId.value;
+    const tipo = this.ajusteTipo.value;
+    let cantidad = Number(this.ajusteCantidad.value);
+    const responsable = this.ajusteResponsable.value.trim();
+    const detalle = this.ajusteDetalle.value;
+    const operacion = this.ajusteOperacion.value;
+
+    if (!id) { this.setMensaje('Selecciona un insumo para registrar el ajuste.'); return; }
+    if (!responsable) { this.setMensaje('Responsable es obligatorio.'); return; }
+    
+    // CAMBIO: Validar que sea un entero válido (puede ser negativo)
+    if (!Number.isInteger(cantidad)) {
+      this.setMensaje('La cantidad debe ser un número entero.'); return;
+    }
+    if (cantidad === 0) {
+      this.setMensaje('La cantidad no puede ser cero.'); return;
+    }
+
+    // CAMBIO: Para CORRECCION_ENTRADA y CORRECCION_SALIDA, siempre resta la cantidad
+    // Para AJUSTE_MANUAL, usar el selector de operacion (suma/resta)
+    if (tipo === 'CORRECCION_ENTRADA' || tipo === 'CORRECCION_SALIDA') {
+      cantidad = -Math.abs(cantidad); // Asegurar que sea negativo
+    } else if (operacion === 'resta') {
+      cantidad = -Math.abs(cantidad); // Asegurar que sea negativo
+    }
+
+    this.procesando.set(true);
+    this.inventarioService
+      .registrarAjuste(id, {
+        tipo,
+        cantidad,
+        responsable,
+        detalle
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.ajusteCantidad.setValue(0);
+          this.ajusteDetalle.setValue('');
+          // CAMBIO: Reemplaza mensaje plano por modal amigable de confirmacion.
+          this.mostrarResultadoExitoso('Ajuste registrado correctamente.');
+          this.cargarInventario(this.filtro.value, id);
+          this.cargarHistorialGlobal();
+        },
+        error: (error: any) => {
+          this.procesando.set(false);
+          this.setMensaje(error?.error?.error ?? error?.error?.detail ?? 'No se pudo registrar el ajuste.');
+        }
+      });
+  }
+
+  cerrarModalResultado() {
+    if (this.resultadoTimer) {
+      clearTimeout(this.resultadoTimer);
+      this.resultadoTimer = null;
+    }
+    this.modalResultadoAbierto.set(false);
+  }
+
+  private mostrarResultadoExitoso(texto: string) {
+    this.modalResultadoTexto.set(texto);
+    this.modalResultadoAbierto.set(true);
+
+    if (this.resultadoTimer) {
+      clearTimeout(this.resultadoTimer);
+    }
+
+    // CAMBIO: Autocierre del modal a los 3 segundos para no interrumpir el flujo del usuario.
+    this.resultadoTimer = setTimeout(() => {
+      this.modalResultadoAbierto.set(false);
+      this.resultadoTimer = null;
+    }, 3000);
   }
 }

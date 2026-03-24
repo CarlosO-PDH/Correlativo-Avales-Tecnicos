@@ -445,25 +445,26 @@ const registrarMovimientoTx = db.transaction(({ id, tipo, cantidad, mes, detalle
     throw new Error("Insumo no encontrado");
   }
 
-  if (tipo === "SALIDA" && item.total < cantidad) {
+  // CAMBIO: Stock se calcula como entrada - egresos, no se almacena
+  const stockActual = item.entrada - item.egresos;
+  if (tipo === "SALIDA" && stockActual < cantidad) {
     throw new Error("No hay stock suficiente para registrar la salida");
   }
 
   if (tipo === "ENTRADA") {
-    // CAMBIO: Entrada incrementa acumulado de entradas y total del insumo.
+    // CAMBIO: Solo modificar entrada, NO total (total = entrada - egresos calculado)
     db.prepare(
-      "UPDATE inventario_insumos SET entrada = entrada + ?, total = total + ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
-    ).run(cantidad, cantidad, id);
+      "UPDATE inventario_insumos SET entrada = entrada + ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(cantidad, id);
   } else {
-    // CAMBIO: Salida incrementa el mes, egresos y reduce total disponible.
+    // CAMBIO: Solo modificar egresos y mes, NO total
     db.prepare(
       `UPDATE inventario_insumos
        SET ${mes} = ${mes} + ?,
            egresos = egresos + ?,
-           total = total - ?,
            updated_at = datetime('now', 'localtime')
        WHERE id = ?`
-    ).run(cantidad, cantidad, cantidad, id);
+    ).run(cantidad, cantidad, id);
   }
 
   ensureResponsable(responsable);
@@ -490,28 +491,27 @@ const corregirMovimientoTx = db.transaction(({ id, tipo, cantidad, mes, detalle,
   }
 
   if (tipo === "ENTRADA") {
-    if (item.entrada < cantidad || item.total < cantidad) {
+    if (item.entrada < cantidad) {
       throw new Error("No se puede revertir esa entrada por falta de saldo");
     }
 
-    // CAMBIO: Correccion de entrada revierte acumulado y total.
+    // CAMBIO: Solo revertir entrada, NO total (se calcula como entrada - egresos)
     db.prepare(
-      "UPDATE inventario_insumos SET entrada = entrada - ?, total = total - ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
-    ).run(cantidad, cantidad, id);
+      "UPDATE inventario_insumos SET entrada = entrada - ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(cantidad, id);
   } else {
     if (item[mes] < cantidad || item.egresos < cantidad) {
       throw new Error("No se puede revertir esa salida por falta de saldo en mes o egresos");
     }
 
-    // CAMBIO: Correccion de salida revierte mes, egresos y repone total.
+    // CAMBIO: Solo revertir mes y egresos, NO total
     db.prepare(
       `UPDATE inventario_insumos
        SET ${mes} = ${mes} - ?,
            egresos = egresos - ?,
-           total = total + ?,
            updated_at = datetime('now', 'localtime')
        WHERE id = ?`
-    ).run(cantidad, cantidad, cantidad, id);
+    ).run(cantidad, cantidad, id);
   }
 
   const tipoCorreccion = tipo === "ENTRADA" ? "CORRECCION_ENTRADA" : "CORRECCION_SALIDA";
@@ -842,6 +842,98 @@ app.patch("/api/inventario/:id/correccion", (req, res) => {
     const status = error.message === "Insumo no encontrado" ? 404 : 400;
     return res.status(status).json({
       error: "No se pudo corregir el movimiento",
+      detail: error.message,
+    });
+  }
+});
+
+// CAMBIO: Transacción para registrar ajustes manuales y correcciones de inventario
+const registrarAjusteTx = db.transaction(({ id, tipo, cantidad, mes, detalle, responsable }) => {
+  const item = getInventarioById(id);
+  if (!item) {
+    throw new Error("Insumo no encontrado");
+  }
+
+  // CAMBIO: Actualizar según el tipo de ajuste
+  // Cantidad puede ser positiva (suma) o negativa (resta)
+  // Nunca modificar `total`: se calcula como entrada - egresos
+  if (tipo === "CORRECCION_ENTRADA" || tipo === "AJUSTE_MANUAL") {
+    // Solo modificar entrada (cantidad puede ser negativa para restar)
+    db.prepare(
+      "UPDATE inventario_insumos SET entrada = entrada + ?, updated_at = datetime('now', 'localtime') WHERE id = ?"
+    ).run(cantidad, id);
+  } else if (tipo === "CORRECCION_SALIDA") {
+    // Solo modificar egresos y mes si existe
+    const updates = [`egresos = egresos + ?`];
+    const params = [cantidad];
+    
+    if (mes) {
+      updates.push(`${mes} = ${mes} + ?`);
+      params.push(cantidad);
+    }
+    
+    updates.push(`updated_at = datetime('now', 'localtime')`);
+    params.push(id);
+
+    db.prepare(
+      `UPDATE inventario_insumos SET ${updates.join(', ')} WHERE id = ?`
+    ).run(...params);
+  }
+
+  // CAMBIO: Registro auditable del ajuste aplicado al inventario.
+  db.prepare(
+    `INSERT INTO inventario_movimientos (
+      inventario_id,
+      tipo,
+      cantidad,
+      mes,
+      detalle,
+      responsable,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`
+  ).run(id, tipo, cantidad, mes || null, detalle || null, responsable);
+
+  return getInventarioById(id);
+});
+
+// ENDPOINT PATCH: Registrar ajustes manuales en inventario
+app.patch("/api/inventario/:id/ajuste", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "ID invalido" });
+  }
+
+  const tipo = typeof req.body?.tipo === "string" ? req.body.tipo.trim().toUpperCase() : "";
+  const cantidad = Number(req.body?.cantidad);
+  const mes = typeof req.body?.mes === "string" ? req.body.mes.trim().toLowerCase() : "";
+  const detalle = typeof req.body?.detalle === "string" ? req.body.detalle.trim() : "";
+  const responsable = typeof req.body?.responsable === "string" ? req.body.responsable.trim() : "";
+
+  // CAMBIO: Validar tipos de ajustes permitidos
+  if (!["CORRECCION_ENTRADA", "CORRECCION_SALIDA", "AJUSTE_MANUAL"].includes(tipo)) {
+    return res.status(400).json({ error: "Tipo de ajuste invalido" });
+  }
+
+  // CAMBIO: Permitir cantidades negativas para restar en ajustes y correcciones
+  if (!Number.isInteger(cantidad)) {
+    return res.status(400).json({ error: "Cantidad debe ser un número entero" });
+  }
+
+  if (!responsable) {
+    return res.status(400).json({ error: "Responsable es obligatorio" });
+  }
+
+  if (tipo === "CORRECCION_SALIDA" && mes && !inventarioMeses.includes(mes)) {
+    return res.status(400).json({ error: "Mes invalido para ajuste de salida" });
+  }
+
+  try {
+    const updated = registrarAjusteTx({ id, tipo, cantidad, mes, detalle, responsable });
+    return res.json(updated);
+  } catch (error) {
+    const status = error.message === "Insumo no encontrado" ? 404 : 400;
+    return res.status(status).json({
+      error: "No se pudo registrar el ajuste",
       detail: error.message,
     });
   }

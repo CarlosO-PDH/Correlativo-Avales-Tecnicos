@@ -27,7 +27,8 @@ export interface InventarioItem {
 }
 
 export interface InventarioMovimientoPayload {
-  tipo: 'ENTRADA' | 'SALIDA';
+  // CAMBIO: Agregar tipos de ajustes manuales además de entradas y salidas
+  tipo: 'ENTRADA' | 'SALIDA' | 'CORRECCION_ENTRADA' | 'CORRECCION_SALIDA' | 'AJUSTE_MANUAL';
   cantidad: number;
   responsable: string;
   detalle?: string;

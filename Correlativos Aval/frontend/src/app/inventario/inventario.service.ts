@@ -77,4 +77,9 @@ export class InventarioService {
   crearResponsable(nombre: string) {
     return this.http.post<InventarioResponsable>(`${this.baseUrl}/responsables`, { nombre });
   }
+
+  registrarAjuste(id: number, payload: InventarioMovimientoPayload) {
+    // CAMBIO: Permite registrar ajustes manuales y correcciones en inventario.
+    return this.http.patch<InventarioItem>(`${this.baseUrl}/${id}/ajuste`, payload);
+  }
 }
