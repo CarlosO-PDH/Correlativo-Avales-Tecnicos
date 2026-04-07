@@ -86,7 +86,7 @@ Angular Karma supports these flags for single test execution:
 
 - **Language**: Spanish comments and variable names are used in this codebase
 - **No lint tool configured** - Follow existing code patterns manually
-- **Always add comments to changes** - When modifying code, add a comment describing what was changed and why (e.g., `// CAMBIO: Ahora muestra modal en lugar de mensaje simple`)
+- **Always add comments to changes** - Todo código nuevo agregado o modificado DEBE ser comentado, describiendo qué hace o el cambio que se realiza (e.g., `// CAMBIO: Ahora muestra modal en lugar de mensaje simple`)
 
 ### Backend (JavaScript/Express)
 

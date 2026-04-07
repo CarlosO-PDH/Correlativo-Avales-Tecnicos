@@ -1,88 +1,178 @@
-/* 
-  ESTILOS GLOBALES DEL LAYOUT
-  Objetivo: Crear una interfaz de "aplicación de escritorio" 
-  donde el menú lateral es fijo y el contenido es fluido.
-*/
-
 :host {
   display: block;
-  height: 100vh; /* Asegura que la app ocupe todo el alto de la pantalla */
+  height: 100vh;
 }
 
 .sidenav-container {
   height: 100vh;
+  background: transparent !important;
 }
 
 /* --- PANEL LATERAL (SIDEBAR) --- */
 .sidenav {
-  width: 260px;
-  background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  width: 280px;
+  background: var(--sidebar-glass) !important;
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-glass) !important;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.sidenav-header {
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-glass);
+  margin-bottom: 20px;
+}
+
+.logo-container {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.logo-icon {
+  color: white;
+  font-size: 24px;
+}
+
+.header-text {
   display: flex;
   flex-direction: column;
 }
 
-.sidenav-header {
-  padding: 24px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 10px;
-}
-
-.sidenav-header mat-icon {
-  color: #1976d2; /* Color primario */
-}
-
-.sidenav-header span {
-  font-weight: 600;
+.app-title {
+  font-weight: 700;
   font-size: 1.1rem;
-  color: #333;
+  color: #fff;
+  letter-spacing: -0.02em;
 }
 
-/* Estilos para los items del menú */
+.app-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Items del Menú */
+.nav-list {
+  padding: 0 12px !important;
+}
+
+.nav-section-label {
+  padding: 16px 12px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.1em;
+}
+
 mat-list-item {
-  margin: 4px 8px !important;
-  border-link: 1px solid transparent;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  margin: 4px 0 !important;
+  border-radius: 12px !important;
+  color: #cbd5e1 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Efecto al pasar el mouse o cuando está activo */
 mat-list-item:hover {
-  background-color: #f0f4f8 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  transform: translateX(4px);
 }
 
 .active-link {
-  background-color: #e3f2fd !important;
-  color: #1976d2 !important;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%) !important;
+  color: #818cf8 !important;
+  border-left: 3px solid #6366f1;
+}
+
+.active-link mat-icon {
+  color: #818cf8 !important;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--border-glass);
+  margin: 20px 12px;
 }
 
 /* --- CONTENIDO PRINCIPAL --- */
-.sidenav-header .mat-typography {
-  font-family: 'Roboto', sans-serif;
+.sidenav-content {
+  background: transparent !important;
 }
 
-.main-content {
-  padding: 24px;
-  background-color: #f5f7fa; /* Un gris muy suave para fondo */
-  min-height: calc(100vh - 64px);
+.main-toolbar {
+  background: var(--toolbar-glass) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-glass);
+  color: #f1f5f9 !important;
+  height: 72px !important;
+  padding: 0 24px !important;
 }
 
-/* Estilos para el toolbar superior */
-.mat-toolbar {
-  background-color: white !important;
-  color: #333 !important;
-  border-bottom: 1px solid #e0e0e0;
+.toolbar-title {
   font-weight: 500;
+  font-size: 1rem;
+  color: #94a3b8;
 }
 
-/* Estilo para el texto de la sección footer/nav */
+.spacer {
+  flex: 1 1 auto;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  color: #94a3b8 !important;
+}
+
+.user-profile {
+  margin-left: 12px;
+  padding: 2px;
+  border: 2px solid #6366f1;
+  border-radius: 50%;
+  display: flex;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.main-container {
+  padding: 32px;
+  min-height: calc(100vh - 72px);
+}
+
+.content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 .nav-footer {
-  padding: 16px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #999;
+  margin-top: auto;
+  padding: 24px;
+}
+
+.version-tag {
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border-radius: 20px;
+  display: inline-block;
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }

@@ -1,69 +1,104 @@
-<section class="dashboard-page">
-  <mat-card class="hero">
+<div class="page-header">
+  <div class="title-section">
+    <h1 class="page-title">Panel de Control</h1>
+    <p class="page-description">Resumen operativo y métricas de gestión de avales críticos.</p>
+  </div>
+  <div class="header-actions">
+    <button mat-flat-button color="primary" routerLink="/avales/registro" class="hero-btn">
+      <mat-icon>add_circle</mat-icon>
+      Nuevo Registro
+    </button>
+  </div>
+</div>
 
-    <section class="dashboard-page">
+<section class="dashboard-grid">
+  <!-- Tarjetas de Métricas (KPIs) -->
+  <mat-card class="stat-card total">
+    <div class="stat-icon-wrapper">
+      <mat-icon>analytics</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Total Avales</span>
+      <strong class="stat-value">{{ totalAvales() }}</strong>
+      <small class="stat-hint">Historial completo</small>
+    </div>
+    <div class="stat-trend plus">+{{ totalAvales() }} acumulados</div>
+  </mat-card>
 
-      <mat-card class="hero">
-        <div class="hero-head">
-          <img src="https://img.icons8.com/color/96/analytics.png" alt="Dashboard Icon" class="hero-icon" />
-          <div class="actions">
-            <a mat-flat-button color="primary" routerLink="/avales/registro">Nuevo Aval</a>
-            <a mat-flat-button color="primary" routerLink="/avales/historial">Ver Historial</a>
-            <a mat-flat-button color="primary" routerLink="/inventario">Ir a Inventario</a>
-          </div>
-        </div>
-      </mat-card>
+  <mat-card class="stat-card success">
+    <div class="stat-icon-wrapper">
+      <mat-icon>check_circle</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Activos</span>
+      <strong class="stat-value">{{ avalesActivos() }}</strong>
+      <small class="stat-hint">Documentos vigentes</small>
+    </div>
+    <div class="stat-chart-mini success"></div>
+  </mat-card>
 
-      <section class="kpis">
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-total">
-            <img src="https://img.icons8.com/fluency/48/overview-pages-3.png" alt="Total" />
-          </div>
-          <span>Total avales</span>
-          <strong>{{ totalAvales() }}</strong>
-          <small>Registros acumulados</small>
-        </mat-card>
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-activos">
-            <img src="https://img.icons8.com/color/48/checked-checkbox.png" alt="Activos" />
-          </div>
-          <span>Avales activos</span>
-          <strong>{{ avalesActivos() }}</strong>
-          <small>Documentos vigentes</small>
-        </mat-card>
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-anulados">
-            <img src="https://img.icons8.com/color/48/cancel.png" alt="Anulados" />
-          </div>
-          <span>Avales anulados</span>
-          <strong>{{ avalesAnulados() }}</strong>
-          <small>Con motivo registrado</small>
-        </mat-card>
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-inventario">
-            <img src="https://img.icons8.com/color/48/warehouse.png" alt="Inventario" />
-          </div>
-          <span>Lineas inventario</span>
-          <strong>{{ lineasInventario() }}</strong>
-          <small>Insumos catalogados</small>
-        </mat-card>
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-stock">
-            <img src="https://img.icons8.com/color/48/box.png" alt="Stock" />
-          </div>
-          <span>Stock disponible</span>
-          <strong>{{ stockInventario() }}</strong>
-          <small>Unidades en existencia</small>
-        </mat-card>
-        <mat-card class="kpi">
-          <div class="kpi-icon kpi-indice">
-            <img src="https://img.icons8.com/color/48/combo-chart.png" alt="Indice" />
-          </div>
-          <span>Indice operativo</span>
-          <strong>{{ totalMovimientos() }}</strong>
-          <small>Avales activos + stock</small>
-        </mat-card>
-      </section>
+  <mat-card class="stat-card warning">
+    <div class="stat-icon-wrapper">
+      <mat-icon>cancel</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Anulados</span>
+      <strong class="stat-value">{{ avalesAnulados() }}</strong>
+      <small class="stat-hint">Registros cancelados</small>
+    </div>
+    <div class="stat-chart-mini warning"></div>
+  </mat-card>
 
-      <!-- Resumen eliminado para simplificar visualmente -->
-    </section>
+  <mat-card class="stat-card info">
+    <div class="stat-icon-wrapper">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Líneas Inv.</span>
+      <strong class="stat-value">{{ lineasInventario() }}</strong>
+      <small class="stat-hint">Catálogo técnico</small>
+    </div>
+    <div class="stat-chart-mini info"></div>
+  </mat-card>
+
+  <mat-card class="stat-card primary">
+    <div class="stat-icon-wrapper">
+      <mat-icon>warehouse</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Stock Total</span>
+      <strong class="stat-value">{{ stockInventario() }}</strong>
+      <small class="stat-hint">Unidades disponibles</small>
+    </div>
+  </mat-card>
+
+  <mat-card class="stat-card tertiary">
+    <div class="stat-icon-wrapper">
+      <mat-icon>speed</mat-icon>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">Índice Operativo</span>
+      <strong class="stat-value">{{ totalMovimientos() }}</strong>
+      <small class="stat-hint">Actividad combinada</small>
+    </div>
+  </mat-card>
+</section>
+
+<!-- Accesos Directos Rápidos -->
+<div class="quick-access-section">
+  <h2 class="section-subtitle">Accesos Directos</h2>
+  <div class="access-grid">
+    <a mat-ripple class="access-card" routerLink="/avales/registro">
+      <mat-icon>assignment_add</mat-icon>
+      <span>Registrar Aval</span>
+    </a>
+    <a mat-ripple class="access-card" routerLink="/historial">
+      <mat-icon>travel_explore</mat-icon>
+      <span>Explorar Historial</span>
+    </a>
+    <a mat-ripple class="access-card" routerLink="/inventario">
+      <mat-icon>inventory</mat-icon>
+      <span>Gestionar Insumos</span>
+    </a>
+  </div>
+</div>

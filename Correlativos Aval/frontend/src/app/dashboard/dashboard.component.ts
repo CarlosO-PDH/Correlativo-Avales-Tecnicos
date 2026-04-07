@@ -4,12 +4,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatRippleModule } from '@angular/material/core';
 import { AvalesService } from '../avales.service';
 import { InventarioService } from '../inventario/inventario.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule],
+  imports: [CommonModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatRippleModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

@@ -1,55 +1,61 @@
-<!-- 
-  ESTRUCTURA DE LAYOUT PROFESIONAL
-  Implementación de Sidenav Container para navegación lateral.
--->
-<mat-sidenav-container class="sidenav-container">
+<mat-sidenav-container class="sidenav-container" autosize>
   
-  <!-- PANEL LATERAL (SIDEBAR) -->
+  <!-- PANEL LATERAL (SIDEBAR) con efecto Glass -->
   <mat-sidenav #sidenav mode="side" opened class="sidenav">
     <div class="sidenav-header">
-      <mat-icon color="primary">account_circle</mat-icon>
-      <span class="user-name">Gestión DTI</span>
+      <div class="logo-container">
+        <mat-icon class="logo-icon">account_balance</mat-icon>
+      </div>
+      <div class="header-text">
+        <span class="app-title">Gestión DTI</span>
+        <span class="app-subtitle">Portal Administrativo</span>
+      </div>
     </div>
 
-    <mat-nav-list>
-      <div class="nav-section-label">MENÚ PRINCIPAL</div>
+    <mat-nav-list class="nav-list">
+      <div class="nav-section-label">PLATAFORMA</div>
       
       <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
         <mat-icon matListItemIcon>dashboard</mat-icon>
-        <span matListItemTitle>Dashboard</span>
+        <span matListItemTitle>Panel Principal</span>
       </a>
 
       <a mat-list-item routerLink="/avales/registro" routerLinkActive="active-link">
-        <mat-icon matListItemIcon>assignment</mat-icon>
-        <span matListItemTitle>Registro de Avales</span>
+        <mat-icon matListItemIcon>add_task</mat-icon>
+        <span matListItemTitle>Gestión de Avales</span>
       </a>
 
-      <a mat-list-item routerLink="/historial" routerLinkActive="active-link">
-        <mat-icon matListItemIcon>history</mat-icon>
-        <span matListItemTitle>Historial</span>
+      <a mat-list-item routerLink="/inventario" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>manage_search</mat-icon>
+        <span matListItemTitle>Inventario</span>
       </a>
 
-      <mat-divider></mat-divider>
+      <div class="nav-divider"></div>
       
       <div class="nav-footer">
-        <small>Versión 1.0</small>
+        <div class="version-tag">v2.0 Premium</div>
       </div>
     </mat-nav-list>
   </mat-sidenav>
 
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- CONTENIDO PRINCIPAL con Toolbar Transparente -->
   <mat-sidenav-content class="sidenav-content">
-    <mat-toolbar color="primary" class="main-toolbar">
-      <span>Portal de Gestión Administrativa</span>
-      <span class="spacer"></span>
-      <button mat-icon-button>
-        <mat-icon>notifications</mat-icon>
+    <mat-toolbar class="main-toolbar">
+      <button mat-icon-button (click)="sidenav.toggle()" class="menu-button">
+        <mat-icon>menu_open</mat-icon>
       </button>
+      
+      <span class="toolbar-title">Portal de Gestión Administrativa</span>
+      
+      <span class="spacer"></span>
+      
+      <span class="spacer"></span>
     </mat-toolbar>
 
-    <!-- Aquí es donde se cargan tus componentes (router-outlet) -->
     <main class="main-container">
-      <router-outlet></router-outlet>
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </mat-sidenav-content>
 

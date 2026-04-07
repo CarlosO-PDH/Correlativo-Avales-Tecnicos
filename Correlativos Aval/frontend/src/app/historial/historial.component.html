@@ -1,52 +1,61 @@
-<mat-card class="header-card no-print">
-  <mat-card-header>
-    <mat-card-title>Historial</mat-card-title>
-    <mat-card-subtitle>{{ rangeLabel }} (pagina {{ pageIndex() + 1 }})</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content class="header-actions">
-    <button mat-flat-button color="primary" type="button" (click)="printHistorial()" [disabled]="loading()">
-      <mat-icon aria-hidden="true">print</mat-icon>
-      Imprimir
+<div class="page-header no-print">
+  <div class="title-section">
+    <h1 class="page-title">Historial de Avales</h1>
+    <p class="page-description">{{ rangeLabel }} • Página {{ pageIndex() + 1 }}</p>
+  </div>
+  <div class="header-actions">
+    <button mat-stroked-button (click)="exportExcel()" [disabled]="loading() || exporting()" class="export-btn">
+      <mat-icon>file_download</mat-icon>
+      {{ exporting() ? 'Exportando...' : 'Excel' }}
     </button>
-    <button mat-flat-button color="accent" type="button" (click)="exportExcel()" [disabled]="loading() || exporting()">
-      <mat-icon aria-hidden="true">file_download</mat-icon>
-      {{ exporting() ? 'Exportando...' : 'Exportar Excel' }}
+    <button mat-flat-button color="primary" (click)="printHistorial()" [disabled]="loading()" class="print-btn">
+      <mat-icon>print</mat-icon>
+      Imprimir Reporte
     </button>
-  </mat-card-content>
-</mat-card>
+  </div>
+</div>
 
+<!-- Filtros de Búsqueda -->
 <mat-card class="filters-card no-print">
   <mat-card-content>
     <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filters-form">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Correlativo</mat-label>
-        <input matInput formControlName="correlativo" placeholder="DTI|DSST|AVAL|0001" />
+        <mat-icon matPrefix>qr_code</mat-icon>
+        <input matInput formControlName="correlativo" placeholder="DTI|DSST..." />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Solicitante</mat-label>
-        <input matInput formControlName="solicitante" placeholder="Nombre del solicitante" />
+        <mat-icon matPrefix>person_search</mat-icon>
+        <input matInput formControlName="solicitante" placeholder="Nombre..." />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha registro</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="fecha" placeholder="dd/mm/aaaa" />
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Fecha</mat-label>
+        <mat-icon matPrefix>event_note</mat-icon>
+        <input matInput [matDatepicker]="picker" formControlName="fecha" />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker startView="multi-year"></mat-datepicker>
+        <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Estado</mat-label>
+        <mat-icon matPrefix>filter_list</mat-icon>
         <mat-select formControlName="estado">
-          <mat-option value="">Todos</mat-option>
-          <mat-option value="ACTIVO">ACTIVO</mat-option>
-          <mat-option value="ANULADO">ANULADO</mat-option>
+          <mat-option value="">Todos los estados</mat-option>
+          <mat-option value="ACTIVO">Activos</mat-option>
+          <mat-option value="ANULADO">Anulados</mat-option>
         </mat-select>
       </mat-form-field>
 
-      <div class="filter-actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">Filtrar</button>
-        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading()">Limpiar</button>
+      <div class="filter-buttons">
+        <button mat-icon-button color="primary" type="submit" matTooltip="Aplicar Filtros">
+          <mat-icon>search</mat-icon>
+        </button>
+        <button mat-icon-button type="button" (click)="clearFilters()" matTooltip="Limpiar">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
       </div>
     </form>
   </mat-card-content>
@@ -54,43 +63,48 @@
 
 <mat-card class="table-card">
   <mat-card-content>
-    <div class="table-toolbar no-print">
-      <div class="table-toolbar-spacer"></div>
+    <div class="table-header no-print">
+      <span class="table-title">Registros Encontrados ({{ total() }})</span>
       <mat-paginator
         [length]="total()"
         [pageSize]="pageSize()"
         [pageIndex]="pageIndex()"
         [pageSizeOptions]="[10, 25, 50]"
         (page)="onPage($event)"
+        class="custom-paginator"
       ></mat-paginator>
     </div>
 
-    <div class="table-wrap" *ngIf="!loading(); else loadingTpl">
-      <table mat-table [dataSource]="avales()" class="mat-elevation-z0">
+    <div class="table-wrap" [class.loading-state]="loading()">
+      <div *ngIf="loading()" class="loading-overlay">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Sincronizando avales...</span>
+      </div>
+
+      <table mat-table [dataSource]="avales()" class="premium-table">
         <ng-container matColumnDef="correlativo">
           <th mat-header-cell *matHeaderCellDef>Correlativo</th>
-          <td mat-cell *matCellDef="let aval" class="mono">{{ aval.correlativo }}</td>
+          <td mat-cell *matCellDef="let aval">
+            <span class="correlativo-chip">{{ aval.correlativo }}</span>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="fecha_registro">
-          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <th mat-header-cell *matHeaderCellDef>Registro</th>
           <td mat-cell *matCellDef="let aval">{{ formatDmy(aval.fecha_registro) }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="fecha_solicitud">
-          <th mat-header-cell *matHeaderCellDef>Fecha Solicitud</th>
-          <td mat-cell *matCellDef="let aval">{{ formatDmy(aval.fecha_solicitud) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="responsable">
           <th mat-header-cell *matHeaderCellDef>Responsable</th>
-          <td mat-cell *matCellDef="let aval">{{ aval.responsable ?? '-' }}</td>
+          <td mat-cell *matCellDef="let aval">
+            <div class="cell-primary">{{ aval.responsable ?? 'N/A' }}</div>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
           <td mat-cell *matCellDef="let aval">
-            <span class="status" [class.status-off]="aval.estado === 'ANULADO'">
+            <span class="status-badge" [class.status-anulado]="aval.estado === 'ANULADO'">
               {{ aval.estado }}
             </span>
           </td>
@@ -98,40 +112,44 @@
 
         <ng-container matColumnDef="nombre_solicitante">
           <th mat-header-cell *matHeaderCellDef>Solicitante</th>
-          <td mat-cell *matCellDef="let aval">{{ aval.nombre_solicitante }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="cargo">
-          <th mat-header-cell *matHeaderCellDef>Cargo</th>
-          <td mat-cell *matCellDef="let aval">{{ aval.cargo }}</td>
+          <td mat-cell *matCellDef="let aval">
+            <div class="cell-primary">{{ aval.nombre_solicitante }}</div>
+            <div class="cell-secondary">{{ aval.cargo }}</div>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="memorando_solicitud">
-          <th mat-header-cell *matHeaderCellDef>Memorando</th>
+          <th mat-header-cell *matHeaderCellDef>Memorando / Notas</th>
           <td mat-cell *matCellDef="let aval">
-            <div class="memo">{{ aval.memorando_solicitud }}</div>
-            <small *ngIf="aval.estado === 'ANULADO'">Motivo: {{ aval.motivo_anulacion }}</small>
+            <div class="memo-text">{{ aval.memorando_solicitud }}</div>
+            <div class="cancel-reason" *ngIf="aval.estado === 'ANULADO'">
+              <mat-icon>warning</mat-icon> <span>{{ aval.motivo_anulacion }}</span>
+            </div>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let aval" class="row-actions">
-            <button mat-stroked-button color="primary" type="button" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="startEdit(aval)">Editar</button>
-            <button mat-stroked-button color="warn" type="button" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="anularAval(aval)">Anular</button>
+            <button mat-icon-button color="primary" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="startEdit(aval)" matTooltip="Editar">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" [disabled]="saving() || aval.estado === 'ANULADO'" (click)="anularAval(aval)" matTooltip="Anular">
+              <mat-icon>delete_sweep</mat-icon>
+            </button>
           </td>
         </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <!-- CAMBIO: Se elimina trackBy en matRowDef por compatibilidad con la version actual de Material. -->
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" 
+            [class.row-anulado]="row.estado === 'ANULADO'"
+            class="premium-row"></tr>
       </table>
 
-      <p class="empty" *ngIf="avales().length === 0">Aun no hay avales registrados.</p>
+      <div class="empty-state" *ngIf="!loading() && avales().length === 0">
+        <mat-icon>search_off</mat-icon>
+        <p>No se encontraron resultados para los criterios seleccionados.</p>
+      </div>
     </div>
-
-    <ng-template #loadingTpl>
-      <p class="loading">Cargando avales...</p>
-    </ng-template>
   </mat-card-content>
 </mat-card>

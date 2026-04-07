@@ -2,54 +2,68 @@
 
 @include mat.core();
 
-// Simple Material theme matching the existing blue direction.
-$primary: mat.m2-define-palette(mat.$m2-blue-palette, 800, 700, 900);
-$accent: mat.m2-define-palette(mat.$m2-cyan-palette, 700);
-$warn: mat.m2-define-palette(mat.$m2-red-palette);
-
-$theme: mat.m2-define-light-theme((
+// Definición de Tema Material 3 (M3)
+$m3-dark-theme: mat.define-theme((
   color: (
-    primary: $primary,
-    accent: $accent,
-    warn: $warn,
+    theme-type: dark,
   ),
-  typography: mat.m2-define-typography-config(),
-  density: 0,
+  typography: (
+    brand-family: 'Outfit',
+    plain-family: 'Outfit',
+  ),
+  density: (
+    scale: 0,
+  ),
 ));
 
-@include mat.all-component-themes($theme);
+// Aplicar el tema global
+html {
+  @include mat.all-component-themes($m3-dark-theme);
+  @include mat.system-level-colors($m3-dark-theme);
+  @include mat.system-level-typography($m3-dark-theme);
+}
+
+// Variables CSS para efectos Premium (Glassmorphism & Gradients)
+:root {
+  --app-bg: radial-gradient(circle at 0% 0%, #0f172a 0%, #020617 50%, #0f172a 100%);
+  --sidebar-glass: rgba(15, 23, 42, 0.7);
+  --toolbar-glass: rgba(2, 6, 23, 0.85);
+  --card-glass: rgba(30, 41, 59, 0.4);
+  --border-glass: rgba(255, 255, 255, 0.08);
+}
 
 * {
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   height: 100%;
-}
-
-body {
   margin: 0;
-  background: radial-gradient(circle at top right, #d8edf7 0%, #f3f7f9 45%, #e8f1f5 100%);
-  color: #0f2431;
+  font-family: 'Outfit', sans-serif !important;
 }
 
+body.dark-background {
+  background: var(--app-bg);
+  color: #f8fafc;
+  overflow-x: hidden;
+}
+
+// Refinamientos globales para componentes M3
+.mat-mdc-card {
+  background: var(--card-glass) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+// Estilos de impresión (Respetados)
 @media print {
   .no-print,
   .mat-mdc-button,
-  .mat-mdc-raised-button,
-  .mat-mdc-unelevated-button,
-  .mat-mdc-outlined-button,
-  .mat-mdc-form-field,
-  .mat-mdc-paginator {
+  .mat-mdc-form-field {
     display: none !important;
   }
-
-  body {
-    background: #fff;
-  }
-
-  mat-card {
-    box-shadow: none !important;
-  }
+  body { background: #fff; color: #000; }
+  .mat-mdc-card { box-shadow: none !important; backdrop-filter: none !important; }
 }

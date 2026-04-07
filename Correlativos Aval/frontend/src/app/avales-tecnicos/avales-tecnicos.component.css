@@ -4,10 +4,11 @@
 }
 
 .tabs-shell {
-  background: #fff;
+  background: var(--card-glass);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 0 0.5rem;
-  border: 1px solid #dce8ef;
+  border: 1px solid var(--border-glass);
 }
 
 .avales-content {
