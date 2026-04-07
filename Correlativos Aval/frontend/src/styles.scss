@@ -16,11 +16,21 @@ $m3-dark-theme: mat.define-theme((
   ),
 ));
 
-// Aplicar el tema global
-html {
+// Aplicar el tema global de forma robusta
+@include mat.all-component-themes($m3-dark-theme);
+@include mat.system-level-colors($m3-dark-theme);
+@include mat.system-level-typography($m3-dark-theme);
+
+// CAMBIO: Asegurar que las bases estructurales de M3 estén cargadas para evitar errores de posicionamiento (como el datepicker en el top-left)
+@include mat.all-component-bases($m3-dark-theme);
+
+html, body {
+  height: 100%;
+}
+
+// CAMBIO: Forzar que los overlays (calendarios, modales) hereden el tema oscuro
+.cdk-overlay-container {
   @include mat.all-component-themes($m3-dark-theme);
-  @include mat.system-level-colors($m3-dark-theme);
-  @include mat.system-level-typography($m3-dark-theme);
 }
 
 // Variables CSS para efectos Premium (Glassmorphism & Gradients)
@@ -55,6 +65,17 @@ body.dark-background {
   border: 1px solid var(--border-glass) !important;
   border-radius: 16px !important;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+// CAMBIO: Corrección de "letras sobrepuestas" en M3. Asegura que el label flote correctamente
+// y que el placeholder no colisione con el label.
+.mat-mdc-form-field {
+  --mdc-outlined-field-label-text-size: 1rem;
+  --mdc-outlined-field-floating-label-text-size: 0.85rem;
+  
+  .mat-mdc-text-field-wrapper {
+    background-color: transparent !important;
+  }
 }
 
 // Estilos de impresión (Respetados)
