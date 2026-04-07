@@ -69,80 +69,112 @@
               (page)="onPage($event)"
             ></mat-paginator>
           </div>
-          <table>
-            <colgroup>
-              <col [style.width.px]="getColumnWidth('correlativo')" />
-              <col [style.width.px]="getColumnWidth('insumo')" />
-              <col [style.width.px]="getColumnWidth('presentacion')" />
-              <col [style.width.px]="getColumnWidth('tamano')" />
-              <col [style.width.px]="getColumnWidth('stockMinimo')" />
-              <col [style.width.px]="getColumnWidth('stockActual')" />
-              <col [style.width.px]="getColumnWidth('ingresos')" />
-              <col [style.width.px]="getColumnWidth('egresos')" />
-              <col [style.width.px]="getColumnWidth('total')" />
-              <col [style.width.px]="getColumnWidth('requerimientoAnual')" />
-              <col [style.width.px]="getColumnWidth('accion')" />
-            </colgroup>
-            <thead>
-              <tr>
-                <!-- CAMBIO: Reordenado, renombrado y campo nuevo -->
-                <th>
-                  <div class="th-content">
-                    <button type="button" class="sort-btn" (click)="toggleSort('correlativo')">
-                      Correlativo <span>{{ getSortIcon('correlativo') }}</span>
-                    </button>
-                    <span class="resize-handle" (mousedown)="startResize($event, 'correlativo')"></span>
-                  </div>
-                </th>
-                <th>
-                  <div class="th-content">
-                    <button type="button" class="sort-btn" (click)="toggleSort('insumo')">
-                      Insumo <span>{{ getSortIcon('insumo') }}</span>
-                    </button>
-                    <span class="resize-handle" (mousedown)="startResize($event, 'insumo')"></span>
-                  </div>
-                </th>
-                <th><div class="th-content"><span class="th-title">Presentacion</span><span class="resize-handle" (mousedown)="startResize($event, 'presentacion')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Tamaño</span><span class="resize-handle" (mousedown)="startResize($event, 'tamano')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Stock mínimo</span><span class="resize-handle" (mousedown)="startResize($event, 'stockMinimo')"></span></div></th>
-                <th>
-                  <div class="th-content">
-                    <button type="button" class="sort-btn" (click)="toggleSort('stockActual')">
-                      Stock actual <span>{{ getSortIcon('stockActual') }}</span>
-                    </button>
-                    <span class="resize-handle" (mousedown)="startResize($event, 'stockActual')"></span>
-                  </div>
-                </th>
-                <th><div class="th-content"><span class="th-title">Ingresos</span><span class="resize-handle" (mousedown)="startResize($event, 'ingresos')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Egresos</span><span class="resize-handle" (mousedown)="startResize($event, 'egresos')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Total</span><span class="resize-handle" (mousedown)="startResize($event, 'total')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Requerimiento Anual</span><span class="resize-handle" (mousedown)="startResize($event, 'requerimientoAnual')"></span></div></th>
-                <th><div class="th-content"><span class="th-title">Accion</span><span class="resize-handle" (mousedown)="startResize($event, 'accion')"></span></div></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of pagedItems; track item.id) {
-                <tr [class.fila-seleccionada]="item.id === itemId.value" (click)="abrirModalEditar(item)">
-                  <td>{{ item.correlativo }}</td>
-                  <td>{{ item.insumo }}</td>
-                  <td>{{ item.presentacion }}</td>
-                  <td>{{ item.tamano_presentacion }}</td>
-                  <!-- CAMBIO: Stock mínimo (antes requerir_2026) -->
-                  <td>{{ item.requerir_2026 }}</td>
-                  <!-- CAMBIO: Stock actual = entrada - egresos (se calcula, no se almacena) -->
-                  <td>{{ item.entrada - item.egresos }}</td>
-                  <!-- CAMBIO: Ingresos (antes entrada) -->
-                  <td>{{ item.entrada }}</td>
-                  <!-- CAMBIO: Egresos -->
-                  <td>{{ item.egresos }}</td>
-                  <!-- CAMBIO: Total = entrada - egresos (igual a stock actual) -->
-                  <td>{{ item.entrada - item.egresos }}</td>
-                  <!-- CAMBIO: Requerimiento Anual -->
-                  <td>{{ item.requerir_2026 }}</td>
-                  <td><button mat-stroked-button class="btn-base btn-neutral">Editar</button></td>
-                </tr>
-              }
-            </tbody>
+          <table mat-table [dataSource]="pagedItems" class="insumos-table">
+            <ng-container matColumnDef="correlativo">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('correlativo')">
+                <div class="th-content">
+                  <button type="button" class="sort-btn" (click)="toggleSort('correlativo')">
+                    Correlativo <span>{{ getSortIcon('correlativo') }}</span>
+                  </button>
+                  <span class="resize-handle" (mousedown)="startResize($event, 'correlativo')"></span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('correlativo')">{{ item.correlativo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="insumo">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('insumo')">
+                <div class="th-content">
+                  <button type="button" class="sort-btn" (click)="toggleSort('insumo')">
+                    Insumo <span>{{ getSortIcon('insumo') }}</span>
+                  </button>
+                  <span class="resize-handle" (mousedown)="startResize($event, 'insumo')"></span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('insumo')">{{ item.insumo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="presentacion">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('presentacion')">
+                <div class="th-content"><span class="th-title">Presentacion</span><span class="resize-handle" (mousedown)="startResize($event, 'presentacion')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('presentacion')">{{ item.presentacion }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="tamano">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('tamano')">
+                <div class="th-content"><span class="th-title">Tamaño</span><span class="resize-handle" (mousedown)="startResize($event, 'tamano')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('tamano')">{{ item.tamano_presentacion }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="stockMinimo">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('stockMinimo')">
+                <div class="th-content"><span class="th-title">Stock mínimo</span><span class="resize-handle" (mousedown)="startResize($event, 'stockMinimo')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('stockMinimo')">{{ item.requerir_2026 }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="stockActual">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('stockActual')">
+                <div class="th-content">
+                  <button type="button" class="sort-btn" (click)="toggleSort('stockActual')">
+                    Stock actual <span>{{ getSortIcon('stockActual') }}</span>
+                  </button>
+                  <span class="resize-handle" (mousedown)="startResize($event, 'stockActual')"></span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('stockActual')">{{ item.entrada - item.egresos }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="ingresos">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('ingresos')">
+                <div class="th-content"><span class="th-title">Ingresos</span><span class="resize-handle" (mousedown)="startResize($event, 'ingresos')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('ingresos')">{{ item.entrada }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="egresos">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('egresos')">
+                <div class="th-content"><span class="th-title">Egresos</span><span class="resize-handle" (mousedown)="startResize($event, 'egresos')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('egresos')">{{ item.egresos }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('total')">
+                <div class="th-content"><span class="th-title">Total</span><span class="resize-handle" (mousedown)="startResize($event, 'total')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('total')">{{ item.entrada - item.egresos }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="requerimientoAnual">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('requerimientoAnual')">
+                <div class="th-content">
+                  <!-- CAMBIO: Encabezado compacto con tooltip para mejorar estetica sin perder claridad. -->
+                  <span class="th-title" matTooltip="Requerimiento Anual" matTooltipPosition="above">Req. Anual</span>
+                  <span class="resize-handle" (mousedown)="startResize($event, 'requerimientoAnual')"></span>
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('requerimientoAnual')">{{ item.requerir_2026 }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="accion">
+              <th mat-header-cell *matHeaderCellDef [style.width.px]="getColumnWidth('accion')">
+                <div class="th-content"><span class="th-title">Accion</span><span class="resize-handle" (mousedown)="startResize($event, 'accion')"></span></div>
+              </th>
+              <td mat-cell *matCellDef="let item" [style.width.px]="getColumnWidth('accion')">
+                <button mat-stroked-button class="btn-base btn-neutral">Editar</button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsInsumos"></tr>
+            <tr
+              mat-row
+              *matRowDef="let item; columns: displayedColumnsInsumos"
+              [class.fila-seleccionada]="item.id === itemId.value"
+              (click)="abrirModalEditar(item)"
+            ></tr>
           </table>
         </div>
       </mat-card>

@@ -1,85 +1,88 @@
+/* 
+  ESTILOS GLOBALES DEL LAYOUT
+  Objetivo: Crear una interfaz de "aplicación de escritorio" 
+  donde el menú lateral es fijo y el contenido es fluido.
+*/
+
 :host {
   display: block;
-  min-height: 100vh;
+  height: 100vh; /* Asegura que la app ocupe todo el alto de la pantalla */
 }
 
-.toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-height: 112px;
-  padding: 0.9rem 1rem;
+.sidenav-container {
+  height: 100vh;
 }
 
-.toolbar-center {
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  display: grid;
-  justify-items: center;
-  gap: 0.35rem;
-  text-align: center;
-}
-
-.toolbar-h1 {
-  font-family: 'Book Antiqua', Georgia, serif;
-  font-size: clamp(1.35rem, 1.6vw + 1rem, 2.25rem);
-  line-height: 1.1;
-  letter-spacing: 0.01em;
-}
-
-.toolbar-nav {
+/* --- PANEL LATERAL (SIDEBAR) --- */
+.sidenav {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
   display: flex;
-  gap: 0.55rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
 }
 
-.toolbar-nav a {
-  border-color: rgba(255, 255, 255, 0.55) !important;
-  color: #fff !important;
-  padding: 0.55rem 1.05rem !important;
-  border-radius: 999px !important;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  background: rgba(255, 255, 255, 0.08);
+.sidenav-header {
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
 }
 
-.toolbar-nav a:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.75) !important;
+.sidenav-header mat-icon {
+  color: #1976d2; /* Color primario */
 }
 
-a.active {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.95) !important;
+.sidenav-header span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
 }
 
-.page {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 1.25rem 1rem 3rem;
+/* Estilos para los items del menú */
+mat-list-item {
+  margin: 4px 8px !important;
+  border-link: 1px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+/* Efecto al pasar el mouse o cuando está activo */
+mat-list-item:hover {
+  background-color: #f0f4f8 !important;
 }
 
-@media (max-width: 960px) {
-  .toolbar {
-    position: static;
-  }
+.active-link {
+  background-color: #e3f2fd !important;
+  color: #1976d2 !important;
 }
 
-@media print {
-  .toolbar {
-    display: none !important;
-  }
+/* --- CONTENIDO PRINCIPAL --- */
+.sidenav-header .mat-typography {
+  font-family: 'Roboto', sans-serif;
+}
 
-  .page {
-    max-width: none;
-    padding: 0;
-  }
+.main-content {
+  padding: 24px;
+  background-color: #f5f7fa; /* Un gris muy suave para fondo */
+  min-height: calc(100vh - 64px);
+}
+
+/* Estilos para el toolbar superior */
+.mat-toolbar {
+  background-color: white !important;
+  color: #333 !important;
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 500;
+}
+
+/* Estilo para el texto de la sección footer/nav */
+.nav-footer {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
 }

@@ -72,22 +72,5 @@ CREATE TABLE IF NOT EXISTS inventario_responsables (
   created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
-INSERT OR IGNORE INTO inventario_insumos (
-  numero, insumo, presentacion, tamano_presentacion, stock, entrada,
-  enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre,
-  octubre, noviembre, diciembre, egresos, total, requerir_2026
-) VALUES
-  (1, 'Aire Comprimido', 'Envase', '20 Onza', 104, 0, 0, 36, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 67, 500),
-  (2, 'Alcohol Isopropilico', 'Envase', '1 Litro', 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0),
-  (3, 'Baterias Boton', 'Unidad', '1 Unidad(es)', 12, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 11, 25),
-  (4, 'Baterias UPS', 'Unidad', '1 Unidad(es)', 75, 80, 0, 12, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 139, 0),
-  (5, 'Espuma Limpiadora', 'Envase', '20 Onza', 257, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 247, 0),
-  (6, 'Kit de Limpieza', 'Unidad', '1 Unidad(es)', 42, 0, 0, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 33, 36),
-  (7, 'Limpia Contactos', 'Bote', '20 Onza', 72, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 69, 0),
-  (8, 'Pano Limpiador', 'Unidad', '1 Unidad(es)', 30, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 25, 0),
-  (9, 'Pasta Termica', 'Tubo', '4 Gramos', 17, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 16, 0),
-  (10, 'Pasta Termica', 'Tubo', '2 Gramos', 0, 30, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 0),
-  (11, 'Restaurador de Plasticos', 'Envase', '1 Galon', 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0),
-  (11, 'Restaurador de Plasticos', 'Envase', '720 Mililitro', 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0),
-  (12, 'Toallas Humedas Para Equipos Electronicos', 'Bote', '30 Unidad(es)', 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 50),
-  (13, 'Wipe', 'Bola', '1 Libra', 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0);
+-- CAMBIO: Se elimina la siembra automatica de inventario para evitar reinserciones no deseadas
+-- en cada reinicio del backend. El inventario se carga ahora solo por operaciones de usuario.

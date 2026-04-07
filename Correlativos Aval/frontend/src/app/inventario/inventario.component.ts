@@ -9,6 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
 import { formatDmy } from '../date-utils';
 import { InventarioItem, InventarioMovimiento, InventarioResponsable } from './inventario.model';
@@ -26,7 +28,9 @@ import { InventarioService } from './inventario.service';
     MatInputModule,
     MatSelectModule,
     MatTabsModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatTableModule,
+    MatTooltipModule
   ],
   templateUrl: './inventario.component.html',
   styleUrl: './inventario.component.css'
@@ -197,6 +201,21 @@ export class InventarioComponent {
     'noviembre',
     'diciembre'
   ] as const;
+
+  // CAMBIO: Definicion de columnas para migracion fase 1 a mat-table en pestaña Insumos.
+  readonly displayedColumnsInsumos = [
+    'correlativo',
+    'insumo',
+    'presentacion',
+    'tamano',
+    'stockMinimo',
+    'stockActual',
+    'ingresos',
+    'egresos',
+    'total',
+    'requerimientoAnual',
+    'accion'
+  ];
 
   // CAMBIO: Declaración de FormControls para ajustes de inventario
   ajusteTipo!: FormControl<'CORRECCION_ENTRADA' | 'CORRECCION_SALIDA' | 'AJUSTE_MANUAL'>;

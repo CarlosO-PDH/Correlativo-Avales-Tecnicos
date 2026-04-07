@@ -1,19 +1,56 @@
-<mat-toolbar color="primary" class="toolbar">
-  <div class="toolbar-center">
-    <!-- CAMBIO: Nombre paraguas para permitir crecimiento a nuevos modulos. -->
-    <div class="toolbar-h1">Portal de Gestion</div>
-    <nav class="toolbar-nav" aria-label="Navegacion">
-      <!-- CAMBIO: Se agrega acceso al dashboard principal para resumen de modulos. -->
-      <a mat-stroked-button routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <!--<a mat-stroked-button routerLink="/avales/registro" routerLinkActive="active">Avales Tecnicos</a>-->
-      <!-- CAMBIO: Nuevo acceso al modulo de inventario de insumos. -->
-      <!--<a mat-stroked-button routerLink="/inventario" routerLinkActive="active">Inventario</a>-->
-    </nav>
-  </div>
-</mat-toolbar>
+<!-- 
+  ESTRUCTURA DE LAYOUT PROFESIONAL
+  Implementación de Sidenav Container para navegación lateral.
+-->
+<mat-sidenav-container class="sidenav-container">
+  
+  <!-- PANEL LATERAL (SIDEBAR) -->
+  <mat-sidenav #sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <mat-icon color="primary">account_circle</mat-icon>
+      <span class="user-name">Gestión DTI</span>
+    </div>
 
-<main class="page">
-  <section class="layout">
-    <router-outlet></router-outlet>
-  </section>
-</main>
+    <mat-nav-list>
+      <div class="nav-section-label">MENÚ PRINCIPAL</div>
+      
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>Dashboard</span>
+      </a>
+
+      <a mat-list-item routerLink="/avales/registro" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>assignment</mat-icon>
+        <span matListItemTitle>Registro de Avales</span>
+      </a>
+
+      <a mat-list-item routerLink="/historial" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>history</mat-icon>
+        <span matListItemTitle>Historial</span>
+      </a>
+
+      <mat-divider></mat-divider>
+      
+      <div class="nav-footer">
+        <small>Versión 1.0</small>
+      </div>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <mat-sidenav-content class="sidenav-content">
+    <mat-toolbar color="primary" class="main-toolbar">
+      <span>Portal de Gestión Administrativa</span>
+      <span class="spacer"></span>
+      <button mat-icon-button>
+        <mat-icon>notifications</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <!-- Aquí es donde se cargan tus componentes (router-outlet) -->
+    <main class="main-container">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

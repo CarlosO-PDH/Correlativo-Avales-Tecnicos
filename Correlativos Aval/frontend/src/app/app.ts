@@ -1,15 +1,35 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
 
-// Decorador del componente: define selector, imports, template y estilos
+
+import { Component } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+
 @Component({
-  selector: 'app-root',                           // Nombre del elemento HTML
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatButtonModule],
-  templateUrl: './app.html',                      // Archivo HTML del componente
-  styleUrl: './app.css'                           // Archivo CSS del componente
+
+
+
+
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    RouterOutlet, 
+    RouterLink, 
+    RouterLinkActive, 
+    MatToolbarModule, 
+    MatSidenavModule, 
+    MatListModule, 
+    MatButtonModule, 
+    MatIconModule
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
 })
-export class App {
-  // Shell component: navigation + router outlet.
-}
+
+
+
+export class App implements Component {}
