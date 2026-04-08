@@ -1,0 +1,50 @@
+# .dockerignore - Excluir archivos del contexto Docker para builds más rápidos
+
+# Version control
+.git
+.gitignore
+.github
+
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist
+build
+.angular
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+.nyc_output
+.mocha
+
+# Docs
+docs
+README.md
+LICENSE
+AGENTS.md
+
+# Temporary
+tmp
+temp
+*.tmp

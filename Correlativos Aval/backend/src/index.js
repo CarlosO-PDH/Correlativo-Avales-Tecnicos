@@ -4,17 +4,26 @@ const cors = require("cors"); // Permite solicitudes desde diferentes dominios
 const path = require("node:path");
 const { db, initDatabase } = require("./db"); // Sistema de base de datos SQLite
 
+// CAMBIO: Importar configuración de entorno
+const config = require("./env-config");
+
+// CAMBIO: Importar autenticación JWT
+const { authenticateToken, requireAdmin } = require("./auth");
+const authRouter = require("./auth-routes");
+
 // Crear instancia del servidor Express
 const app = express();
-// Puerto en el que escucha la API (por defecto 3000)
-const PORT = process.env.PORT || 3000;
-// Host/dirección donde se vincula el servidor
-const HOST = process.env.HOST || "0.0.0.0";
+// CAMBIO: Usar configuración de entorno
+const PORT = config.port;
+const HOST = config.host;
 
-// Middleware: permitir solicitudes CORS (desde el frontend)
-app.use(cors());
+// CAMBIO: Middleware CORS diferenciado por entorno
+app.use(cors(config.cors));
 // Middleware: parsear JSON en las solicitudes
 app.use(express.json());
+
+// CAMBIO: Montar rutas de autenticación (permite login sin JWT)
+app.use("/api/auth", authRouter);
 
 // Serve Angular production build (single-server deployment).
 // Build output: ../frontend/dist/<project>/browser
@@ -79,251 +88,210 @@ const createAvalTx = db.transaction((payload) => {
   // Generar el correlativo en formato: DTI|DSST|AVAL|0001
   const correlativo = `DTI|DSST|AVAL|${String(nextNumber).padStart(4, "0")}`;
 
-  // Actualizar el contador en la tabla secuencias
+  // Incrementar el contador en la tabla secuencias
   db.prepare("UPDATE secuencias SET ultimo_numero = ? WHERE nombre = ?").run(
     nextNumber,
     "AVAL"
   );
 
-  // Insertar el nuevo aval en la base de datos
+  // Insertar el nuevo aval en la tabla avales con valores por defecto
   const result = db
     .prepare(
       `INSERT INTO avales (
-        fecha_registro,
-        fecha_solicitud,
-        correlativo,
-        direccion_administrativa,
-        unidad_institucion,
-        nombre_solicitante,
-        cargo,
-        responsable,
-        memorando_solicitud
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      fecha_registro,
+      correlativo,
+      direccion_administrativa,
+      unidad_institucion,
+      nombre_solicitante,
+      cargo,
+      fecha_solicitud,
+      responsable,
+      memorando_solicitud,
+      estado,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       payload.fecha_registro,
-      payload.fecha_solicitud,
       correlativo,
       payload.direccion_administrativa,
       payload.unidad_institucion,
       payload.nombre_solicitante,
       payload.cargo,
-      payload.responsable,
-      payload.memorando_solicitud
+      payload.fecha_solicitud || null,
+      payload.responsable || null,
+      payload.memorando_solicitud,
+      "ACTIVO",
+      new Date().toLocaleString("es-ES", { timeZone: "UTC" })
     );
 
-  // Retornar el ID del aval creado y su correlativo
-  return {
-    id: result.lastInsertRowid,
-    correlativo,
-  };
+  // Devolver el aval creado
+  return db.prepare("SELECT * FROM avales WHERE id = ?").get(result.lastInsertRowid);
 });
 
-// ENDPOINT: Verificar si el servidor está activo
+// ENDPOINT GET: Health check - Confirma que el servidor está activo
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
+  res.json({ status: "ok" });
 });
 
-// ENDPOINT GET: Obtener lista de avales con filtros opcionales
-app.get("/api/avales", (req, res) => {
-  // Extraer y limpiar parámetros de búsqueda de la URL
-  const correlativo = cleanQueryParam(req.query.correlativo); // Filtro: número de correlativo
-  const solicitante = cleanQueryParam(req.query.solicitante);  // Filtro: nombre del solicitante
-  const fecha = cleanQueryParam(req.query.fecha);              // Filtro: fecha del registro
-  const estado = cleanQueryParam(req.query.estado);            // Filtro: estado (ACTIVO/ANULADO)
+// ENDPOINT GET: Retornar lista de avales o cantidad de ellos con filtros
+// CAMBIO: Protegido con JWT - requiere token válido
+app.get("/api/avales", authenticateToken, (req, res) => {
+  try {
+    // Limpiar parámetros de búsqueda
+    const correlativo = cleanQueryParam(req.query.correlativo);
+    const solicitante = cleanQueryParam(req.query.solicitante);
+    const fecha = cleanQueryParam(req.query.fecha);
+    const estado = cleanQueryParam(req.query.estado);
+    const limit = parseInt(req.query.limit, 10) || 100;
+    const offset = parseInt(req.query.offset, 10) || 0;
 
-  // Paginación opcional
-  const rawLimit = cleanQueryParam(req.query.limit);
-  const rawOffset = cleanQueryParam(req.query.offset);
-  const limit = rawLimit ? Number.parseInt(rawLimit, 10) : null;
-  const offset = rawOffset ? Number.parseInt(rawOffset, 10) : null;
-  const usePaging = Number.isInteger(limit) && limit > 0;
-  const safeLimit = usePaging ? Math.min(limit, 200) : null;
-  const safeOffset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
+    // Construir la query de base
+    let query = "SELECT * FROM avales WHERE 1=1";
+    const params = [];
 
-  // Construir dinámicamente la consulta SQL según los filtros proporcionados
-  const where = []; // Condiciones WHERE
-  const values = []; // Valores para los parámetros preparados
+    // Agregar filtros dinámicamente si están presentes
+    if (correlativo) {
+      query += " AND correlativo LIKE ?";
+      params.push(`%${correlativo}%`);
+    }
+    if (solicitante) {
+      query += " AND nombre_solicitante LIKE ?";
+      params.push(`%${solicitante}%`);
+    }
+    if (fecha) {
+      query += " AND fecha_registro LIKE ?";
+      params.push(`%${fecha}%`);
+    }
+    if (estado) {
+      query += " AND estado = ?";
+      params.push(estado);
+    }
 
-  // Si hay búsqueda de correlativo, agregar a la consulta
-  if (correlativo) {
-    where.push("correlativo LIKE ?");     // LIKE permite búsquedas parciales
-    values.push(`%${correlativo}%`);       // % es comodín (contiene)
+    // Empezar con los más recientes
+    query += " ORDER BY fecha_registro DESC, id DESC";
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
+
+    // Ejecutar query
+    const avales = db.prepare(query).all(...params);
+
+    // Retornar respuesta
+    res.json({
+      data: avales,
+      count: avales.length,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    console.error("Error al obtener avales:", err);
+    return res.status(500).json({ error: "Error al obtener los avales" });
   }
-
-  // Si hay búsqueda por nombre de solicitante
-  if (solicitante) {
-    where.push("nombre_solicitante LIKE ?");
-    values.push(`%${solicitante}%`);
-  }
-
-  // Filtro por fecha exacta
-  if (fecha) {
-    where.push("fecha_registro = ?");
-    values.push(fecha);
-  }
-
-  // Filtro por estado: solo permite ACTIVO o ANULADO para evitar inyecciones SQL
-  if (estado && ["ACTIVO", "ANULADO"].includes(estado.toUpperCase())) {
-    where.push("estado = ?");
-    values.push(estado.toUpperCase());
-  }
-
-  const whereSql = where.length > 0 ? ` WHERE ${where.join(" AND ")}` : "";
-  const baseSql = `FROM avales${whereSql}`;
-
-  // Total (para UI/paginación). Se expone como header.
-  const total = db.prepare(`SELECT COUNT(*) as total ${baseSql}`).get(...values)?.total ?? 0;
-  res.setHeader("X-Total-Count", String(total));
-
-  // Construir la consulta SQL completa
-  const sql = `SELECT * ${baseSql} ORDER BY id DESC${usePaging ? " LIMIT ? OFFSET ?" : ""}`;
-  // Ejecutar la consulta con los parámetros preparados
-  const rows = usePaging
-    ? db.prepare(sql).all(...values, safeLimit, safeOffset)
-    : db.prepare(sql).all(...values);
-
-  // Retornar los resultados como JSON
-  res.json(rows);
 });
 
-// ENDPOINT GET: Obtener detalles de un aval específico por ID
-app.get("/api/avales/:id", (req, res) => {
-  // Convertir el ID de URL a número
+// ENDPOINT GET: Obtener un aval específico por su ID
+// CAMBIO: Protegido con JWT
+app.get("/api/avales/:id", authenticateToken, (req, res) => {
+  // Validar ID
   const id = Number(req.params.id);
-  // Validar que sea un número entero positivo
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: "ID inválido" });
   }
 
-  // Buscar el aval en la base de datos
-  const row = db.prepare("SELECT * FROM avales WHERE id = ?").get(id);
-  // Si no existe retornar 404
-  if (!row) {
+  // Buscar aval por ID
+  const aval = db.prepare("SELECT * FROM avales WHERE id = ?").get(id);
+
+  // Si no existe, retornar 404
+  if (!aval) {
     return res.status(404).json({ error: "Aval no encontrado" });
   }
 
   // Retornar el aval encontrado
-  return res.json(row);
+  res.json(aval);
 });
 
-// ENDPOINT POST: Crear un nuevo aval
-app.post("/api/avales", (req, res) => {
-  // Verificar que todos los campos requeridos estén presentes y no sean vacíos
-  const missing = requiredCreateFields.filter((field) => {
-    const value = req.body[field];
-    return typeof value !== "string" || value.trim() === "";
-  });
-
-  // Si faltan campos, retornar error 400
-  if (missing.length > 0) {
-    return res.status(400).json({
-      error: "Campos obligatorios incompletos",
-      fields: missing,
-    });
-  }
-
-  // Ejecutar la transacción para crear el aval
+// ENDPOINT POST: Crear un nuevo aval con un correlativo único generado automáticamente
+// CAMBIO: Protegido con JWT - solo admin puede crear
+app.post("/api/avales", authenticateToken, requireAdmin, (req, res) => {
   try {
-    // Ejecutar la transacción que crea el aval y genera el correlativo
-    const created = createAvalTx(req.body);
-    // Obtener todos los datos del aval recién creado
-    const fullRow = db.prepare("SELECT * FROM avales WHERE id = ?").get(created.id);
-    // Retornar el aval completo con estado 201 (creado)
-    return res.status(201).json(fullRow);
-  } catch (error) {
-    // Si hay error, retornar 500 con detalles
-    return res.status(500).json({
-      error: "No se pudo crear el aval",
-      detail: error.message,
-    });
+    // Validar que todos los campos requeridos estén presentes
+    const missingFields = requiredCreateFields.filter((field) => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: "Campos requeridos faltantes",
+        missing: missingFields,
+      });
+    }
+
+    // TRANSACCIÓN: Crear aval dentro de una transacción
+    const aval = createAvalTx(req.body);
+
+    // Retornar el aval creado (status 201 para created)
+    return res.status(201).json(aval);
+  } catch (err) {
+    console.error("Error al crear aval:", err);
+    return res.status(500).json({ error: "Error al crear el aval" });
   }
 });
 
 // ENDPOINT PATCH: Actualizar campos específicos de un aval existente
-app.patch("/api/avales/:id", (req, res) => {
-  // Validar que el ID sea válido
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(400).json({ error: "ID inválido" });
-  }
-
-  // Proteger campos que NO pueden ser editados por el usuario
-  // (correlativo y campos de anulación se gestionen a través de endpoints específicos)
-  if (
-    Object.hasOwn(req.body, "correlativo") ||
-    Object.hasOwn(req.body, "estado") ||
-    Object.hasOwn(req.body, "motivo_anulacion") ||
-    Object.hasOwn(req.body, "anulado_at")
-  ) {
-    return res.status(400).json({
-      error: "No puedes editar correlativo ni campos de anulacion",
-    });
-  }
-
-  // Preparar los campos a actualizar
-  const updates = [];         // Partes de la consulta UPDATE
-  const values = [];          // Valores para los campos
-  const invalidFields = [];   // Campos con valores inválidos
-
-  // Iterar sobre los campos editables permitidos
-  editableFields.forEach((field) => {
-    // Si el usuario envía este campo en la solicitud
-    if (Object.hasOwn(req.body, field)) {
-      const value = req.body[field];
-      // Validar que sea texto no vacío
-      if (typeof value !== "string" || value.trim() === "") {
-        invalidFields.push(field);
-        return;
-      }
-      // Agregar a la actualización
-      updates.push(`${field} = ?`);
-      values.push(value.trim());
-    }
-  });
-
-  // Validar que no haya campos inválidos
-  if (invalidFields.length > 0) {
-    return res.status(400).json({
-      error: "Campos inválidos para actualizar",
-      fields: invalidFields,
-    });
-  }
-
-  // Validar que haya al menos un campo válido para actualizar
-  if (updates.length === 0) {
-    return res.status(400).json({
-      error: "No hay campos válidos para actualizar",
-    });
-  }
-
-  // Verificar que el aval existe
-  const exists = db.prepare("SELECT id FROM avales WHERE id = ?").get(id);
-  if (!exists) {
-    return res.status(404).json({ error: "Aval no encontrado" });
-  }
-
-  // Agregar timestamp de actualización y el ID a los valores
-  updates.push("updated_at = datetime('now', 'localtime')");
-  values.push(id);
-
-  // Ejecutar la actualización
+// CAMBIO: Protegido con JWT - solo admin puede editar
+app.patch("/api/avales/:id", authenticateToken, requireAdmin, (req, res) => {
   try {
-    // Ejecutar la consulta UPDATE con todos los campos preparados
-    db.prepare(`UPDATE avales SET ${updates.join(", ")} WHERE id = ?`).run(...values);
-    // Obtener el aval actualizado para retornarlo
+    // Validar ID
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    // Obtener el aval actual
+    const aval = db.prepare("SELECT * FROM avales WHERE id = ?").get(id);
+    if (!aval) {
+      return res.status(404).json({ error: "Aval no encontrado" });
+    }
+
+    // Validar que el aval no esté anulado (no se puede editar si está anulado)
+    if (aval.estado === "ANULADO") {
+      return res.status(400).json({ error: "No se puede editar un aval anulado" });
+    }
+
+    // Filtrar los campos que se pueden editar
+    const updates = {};
+    editableFields.forEach((field) => {
+      if (field in req.body) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    // Si no hay campos para actualizar, retornar error
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "Sin campos para actualizar" });
+    }
+
+    // Construir la query UPDATE dinámicamente
+    const setClause = Object.keys(updates)
+      .map((field) => `${field} = ?`)
+      .join(", ");
+    const setClause_Updated = `${setClause}, updated_at = datetime('now', 'localtime')`;
+    const values = Object.values(updates);
+
+    // Ejecutar update
+    db.prepare(
+      `UPDATE avales SET ${setClause_Updated} WHERE id = ?`
+    ).run(...values, id);
+
+    // Obtener y retornar el aval actualizado
     const updated = db.prepare("SELECT * FROM avales WHERE id = ?").get(id);
     return res.json(updated);
-  } catch (error) {
-    return res.status(400).json({
-      error: "No se pudo actualizar el aval",
-      detail: error.message,
-    });
+  } catch (err) {
+    console.error("Error al actualizar aval:", err);
+    return res.status(500).json({ error: "Error al actualizar el aval" });
   }
 });
 
 // ENDPOINT PATCH: Anular un aval existente (marca como inactivo)
-app.patch("/api/avales/:id/anular", (req, res) => {
+// CAMBIO: Protegido con JWT - solo admin puede anular
+app.patch("/api/avales/:id/anular", authenticateToken, requireAdmin, (req, res) => {
   // Validar ID
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {

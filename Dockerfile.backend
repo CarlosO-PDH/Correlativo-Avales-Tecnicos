@@ -1,0 +1,38 @@
+# Dockerfile backend - Multi-stage build
+# CAMBIO: Usando Node Alpine para imagen pequeña y eficiente
+
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY Correlativos\ Aval/backend/package*.json ./
+
+# Instalar dependencias con npm ci (más determinista)
+RUN npm ci
+
+# Stage final
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copiar node_modules del builder
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copiar código fuente
+COPY Correlativos\ Aval/backend/src ./src
+COPY Correlativos\ Aval/backend/scripts ./scripts
+COPY Correlativos\ Aval/database ./database
+
+# Copiar .env según ambiente (se monta en runtime)
+# RUN mkdir -p /app/.env
+
+# Exponer puerto
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', { timeout: 2000 }, (res) => { if (res.statusCode !== 200) throw Error('unhealthy') })"
+
+# Comando de inicio
+CMD ["node", "src/index.js"]

@@ -280,6 +280,27 @@ Restart-Service Correlativos-Avales
 
 ---
 
+## Documentation Organization
+
+**Important Rule**: All `.md` documentation files MUST be created in the `docs/` folder, with these exceptions:
+
+- **Root Level (not in docs/)**: 
+  - `AGENTS.md` - Agent configuration and code style guidelines
+  - `README.md` - Project overview
+  - `changelog.md` - Version history and release notes
+
+- **docs/ Folder** (all other documentation):
+  - `agent-notes.md` - Technical deployment guide
+  - `arquitectura.md` - Architecture diagrams and stack overview
+  - `conexion-db.md` - Database connection guide
+  - `endpoints.md` - API reference (created during Fase 1)
+  - `problemas.md` - Issue tracker
+  - `[future]*.md` - Any other documentation
+
+**Why**: Centralizes all project documentation in one location for easy maintenance and discovery.
+
+---
+
 ## Notes for AI Agents
 
 - Always verify Node/npm versions match 22.11.0/11.6.2 before running commands
@@ -287,3 +308,4 @@ Restart-Service Correlativos-Avales
 - Database file is at `Correlativos Aval/database/avales.db`
 - Frontend build output served by backend from `frontend/dist/correlativos-aval-web/browser`
 - No ESLint or Prettier configured - follow existing code style
+- All documentation (except AGENTS.md, README.md, changelog.md) goes in `docs/` folder

@@ -19,15 +19,27 @@ Registro de cambios por versión. Formato: `[FECHA] | v[VERSION] | CAMBIO | AUTO
 
 ## v2.0 (En Desarrollo)
 
-### Fase 1: Autenticación + Docker + Documentación
-- [ ] Tabla de usuarios con password_hash (bcrypt)
-- [ ] JWT Authentication (access token + refresh token)
-- [ ] Endpoints: POST /auth/login, POST /auth/refresh
-- [ ] CORS diferenciado por ENVIRONMENT
-- [ ] Dockerfiles para backend y frontend
-- [ ] docker-compose.yml para desarrollo local
-- [ ] Postman collection con 9 endpoints
-- [ ] Documentación: endpoints.md, conexion-db.md, arquitectura.md
+### Fase 1: Autenticación + Docker + Documentación ✅ COMPLETADA
+- [x] Tabla de usuarios con password_hash (bcrypt)
+- [x] JWT Authentication (access token + refresh token)
+- [x] Endpoints: POST /auth/login, POST /auth/refresh
+- [x] CORS diferenciado por ENVIRONMENT
+- [x] Dockerfiles para backend y frontend
+- [x] docker-compose.yml para desarrollo local
+- [x] Postman collection con 9 endpoints
+- [x] Documentación: endpoints.md, conexion-db.md, arquitectura.md
+- [x] Frontend environment configs (development/staging/production)
+
+**Cambios Implementados (2025-02-13):**
+- Usuarios table: id, email (UNIQUE), password_hash (bcrypt), rol (admin/usuario), activo, timestamps
+- JWT tokens: accessToken (15m expiresIn), refreshToken (7d expiresIn)
+- Auth middleware: authenticateToken(), requireAdmin() for route protection
+- Backend endpoints: POST /auth/login, POST /auth/refresh
+- Protected routes: GET/POST/PATCH /api/avales require JWT token + admin for write operations
+- Environment configs: Development (CORS '*'), Staging (CORS localhost:*), Production (CORS domain-specific)
+- Docker: Multi-stage builds for backend (Node Alpine) and frontend (Node + Nginx Alpine)
+- Frontend: environment.ts, environment.staging.ts, environment.prod.ts + api.config.ts
+- Postman Collection: Complete with auth flow, CRUD operations, variables (BASE_URL, tokens)
 
 ### Fase 2: Despliegue en Producción
 - [ ] Oracle VM + Ubuntu 22.04 LTS
