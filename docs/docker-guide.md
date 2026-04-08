@@ -21,18 +21,36 @@ docker-compose --version
 
 ## 🚀 Arrancar la Aplicación Completa
 
+### ⚠️ NOTA: Con Podman/Docker Compose
+
+Si usas Podman (como en Fedora/RHEL), usa `podman-compose` en lugar de `docker-compose`:
+
+```bash
+# Asegurate de tener podman-compose instalado
+which podman-compose
+# Si no encuentra: pip3 install podman-compose
+
+# Luego usa podman-compose en lugar de docker-compose
+podman-compose up --build
+```
+
 ### Opción 1: Inicial - Build desde cero
 
 ```bash
 cd "/home/ceorozcom/Documents/Proyecto-Avales-Tecnicos/Correlativo-Avales-Tecnicos"
 
-# Build de imágenes y arrancar servicios
+# Build de imágenes y arrancar servicios (Docker)
 docker-compose up --build
+
+# O con Podman
+podman-compose up --build
 
 # Output esperado:
 # backend    | 🎯 Servidor escuchando en puerto 3000
 # frontend   | nginx: master process started
 ```
+
+**NOTA IMPORTANTE**: El build de Angular (frontend) tarda 3-5 minutos. Si ves que se queda colgado, déjalo corriendo - está compilando Angular.
 
 **CTRL+C** para detener servicios.
 
@@ -321,33 +339,54 @@ docker-compose exec backend node -e "
 
 ## 🔄 Workflow Desarrollo Local
 
-### Con Docker (recomendado)
+### CON PODMAN/DOCKER (Full Stack en Contenedores)
 
 ```bash
-# 1. Arrancar servicios
-docker-compose up
+# 1. Arrancar solo backend en Docker/Podman (frontend es lento)
+cd "/home/ceorozcom/Documents/Proyecto-Avales-Tecnicos/Correlativo-Avales-Tecnicos"
 
-# 2. En otra terminal - hacer cambios en código
-# (Los cambios se reflejan automáticamente en los volúmenes)
+podman-compose up backend
 
-# 3. Testear en http://localhost
-
-# 4. Ver logs
-docker-compose logs -f backend
-```
-
-### Sin Docker (desarrollo nativo)
-
-```bash
-# Terminal 1 - Backend
-cd "Correlativos Aval/backend"
-npm run dev
-
-# Terminal 2 - Frontend
+# 2. EN OTRA TERMINAL - Frontend con ng serve (desarrollo local)
 cd "Correlativos Aval/frontend"
 npm start
 
-# Accede a http://localhost:4200 (ng serve)
+# 3. Accede a:
+#    Frontend: http://localhost:4200 (Angular dev server)
+#    Backend:  http://localhost:3000/api
+```
+
+### SIN DOCKER (Desarrollo Nativo - Recomendado para desarrollo)
+
+**Más rápido que Docker - recomendado durante desarrollo local:**
+
+```bash
+# Terminal 1 - Backend (Node.js 22.11.0 local)
+cd "Correlativos Aval/backend"
+npm run dev
+
+# Terminal 2 - Frontend (Angular dev server)
+cd "Correlativos Aval/frontend"
+npm start
+
+# Accede a:
+#    Frontend: http://localhost:4200 (Auto-reload con ng serve)
+#    Backend:  http://localhost:3000/api (Auto-reload con nodemon)
+
+# ⚠️ IMPORTANTE: Primero crea usuario de prueba en backend
+```
+
+**Crear usuario de prueba (SQL directo):**
+
+```bash
+node << 'EOF'
+const db = require('better-sqlite3')('./database/avales.db');
+const bcrypt = require('bcrypt');
+const hash = bcrypt.hashSync('password123', 10);
+db.prepare(`INSERT INTO usuarios (email, password_hash, rol, activo, created_at) 
+           VALUES (?, ?, ?, 1, datetime("now"))`).run('admin@example.com', hash, 'admin');
+console.log('✅ Usuario admin creado');
+EOF
 ```
 
 ---
