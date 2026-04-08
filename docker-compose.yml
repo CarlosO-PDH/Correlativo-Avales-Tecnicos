@@ -3,8 +3,8 @@ version: '3.9'
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
+      context: "./Correlativos Aval/backend"
+      dockerfile: "../../Dockerfile.backend"
     container_name: correlativos-backend
     ports:
       - "3000:3000"
@@ -19,8 +19,8 @@ services:
       CORS_ORIGIN: "*"
       LOG_LEVEL: verbose
     volumes:
-      - ./Correlativos\ Aval/database:/app/database
-      - ./Correlativos\ Aval/backend/src:/app/src
+      - "./Correlativos Aval/database:/app/database"
+      - "./Correlativos Aval/backend/src:/app/src"
     networks:
       - correlativos-net
     depends_on:
@@ -34,13 +34,15 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: "./Correlativos Aval/frontend"
+      dockerfile: "../../Dockerfile.frontend"
     container_name: correlativos-frontend
     ports:
       - "80:80"
     environment:
       ENVIRONMENT: development
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf:ro"
     networks:
       - correlativos-net
     depends_on:

@@ -1,14 +1,15 @@
 # Dockerfile backend - Multi-stage build
-# CAMBIO: Usando Node Alpine para imagen pequeña y eficiente
+# CAMBIO: Context ahora es ./Correlativos Aval/backend
+# Rutas simples sin espacios
 
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias (usar quotes para manejar espacios)
-COPY "Correlativos Aval/backend/package*.json" ./
+# Copiar archivos de dependencias (sin espacios)
+COPY package*.json ./
 
-# Instalar dependencias con npm ci (más determinista)
+# Instalar dependencias con npm ci
 RUN npm ci
 
 # Stage final
@@ -19,10 +20,12 @@ WORKDIR /app
 # Copiar node_modules del builder
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copiar código fuente (usar quotes para manejar espacios en rutas)
-COPY "Correlativos Aval/backend/src" ./src
-COPY "Correlativos Aval/backend/scripts" ./scripts
-COPY "Correlativos Aval/database" ./database
+# Copiar código fuente (sin espacios)
+COPY src ./src
+COPY scripts ./scripts
+
+# Crear carpeta de base de datos (será un volumen en runtime)
+RUN mkdir -p /app/database
 
 # Copiar .env según ambiente (se monta en runtime)
 # RUN mkdir -p /app/.env
